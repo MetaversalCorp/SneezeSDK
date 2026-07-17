@@ -1,0 +1,3 @@
+[submodule "Rust"]
+	path = Rust
+	url = https://github.com/MetaversalCorp/SneezeSDK_Rust.git
