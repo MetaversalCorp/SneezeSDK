@@ -8,13 +8,16 @@ A running module is a **WASM instance**. One instance can serve **many fabrics**
 
 ```
 FABRIC (the root handle for one open fabric)
-- Console ()   -> CONSOLE    developer-console logging
-- Storage ()   -> STORAGE    persistent JSON, per scope
-- Data ()      -> DATA       the fabric's read-only config "Data" tree
-- Scene ()     -> SCENE      build the node tree
+- Console ()     -> CONSOLE      developer-console logging
+- Storage ()     -> STORAGE      persistent JSON, per scope
+- Data ()        -> DATA         the fabric's read-only config "Data" tree
+- Scene ()       -> SCENE        build the node tree
+- Chrono ()      -> CHRONO       the wall clock (and the MOMENT calendar value)
+- Performance () -> PERFORMANCE  the monotonic clock, for elapsed timing
+- Timer ()       -> TIMER        one-shot / repeating scheduled callbacks
 ```
 
-The subsystem objects (`CONSOLE`, `STORAGE`, `DATA`, `SCENE`) are **zero-cost views**: each is just the fabric index in a typed wrapper. Calling `Console ()` allocates nothing; it hands back a handle that knows which fabric it belongs to. This is why there is one `Console_Log` and not a `Fabric_Console` round-trip - the fabric handle *is* the routing key.
+The subsystem objects (`CONSOLE`, `STORAGE`, `DATA`, `SCENE`, `CHRONO`, `PERFORMANCE`, `TIMER`) are **zero-cost views**: each is just the fabric index in a typed wrapper. Calling `Console ()` allocates nothing; it hands back a handle that knows which fabric it belongs to. This is why there is one `Console_Log` and not a `Fabric_Console` round-trip - the fabric handle *is* the routing key.
 
 There is exactly one of each subsystem per fabric (they are singletons), which is why they need no identifier beyond the fabric. Nodes are different: there are many per fabric, so a [`NODE`](NODE.md) carries its own object index and is mutated by that index.
 
@@ -51,6 +54,18 @@ Shutdown ()                    the module is unloading
 
 `Init` and `Shutdown` bracket the module's whole life. Each `Open`/`Close` pair brackets one fabric. Because one instance can hold several fabrics open at once, never assume `Open` and `Close` are one-to-one in time - key any per-fabric state by `FABRIC::Index ()`.
 
+Beyond these four, the engine can also call your instance back *asynchronously* through [`INSTANCE::Timer`](INSTANCE.md#timer) when a [`TIMER`](TIMER.md) you armed fires. These callbacks arrive between `Open` and `Close` for the fabric that armed the timer.
+
+## Time, timers, and the clock
+
+Three fabric views cover time, split by role rather than lumped into one `Date`:
+
+- [`CHRONO`](CHRONO.md) is the **wall clock** - "what time is it?" It returns scalars (`Time`, `Date`) and a [`MOMENT`](MOMENT.md) calendar value (`Now`).
+- [`PERFORMANCE`](PERFORMANCE.md) is the **monotonic clock** - "how much time elapsed?" It never runs backward, so it is what you time work with.
+- [`TIMER`](TIMER.md) is the **scheduler** - arm a one-shot or repeating callback instead of polling the clock.
+
+A [`MOMENT`](MOMENT.md) is a value you hold by copy; the host fills both scalar forms and both (UTC and local) calendar breakdowns in one call, so reading it back never crosses the boundary again.
+
 ## Building a scene
 
 Scene construction is a two-step pattern:
@@ -64,7 +79,9 @@ After creation you mutate a live node through its `NODE` handle (`Position`, `Sc
 
 ## What is not here yet
 
-The ABI reserves numbers for subsystems and methods that are declared but not yet implemented in the engine: `NETWORK` (fetch), `VIEWPORT` (camera get/set), the `SCENE` global-lighting and background methods, and `NODE::Rotation`. These appear in `sneeze_abi.h` marked "not implemented yet" and have no SDK wrapper - do not rely on them until they land. Event delivery through `Notify` is likewise reserved for a later item and is currently inert.
+The ABI reserves numbers for subsystems and methods that are declared but not yet implemented in the engine: `NETWORK` (fetch), `VIEWPORT` (camera get/set), the `SCENE` global-lighting and background methods, and `NODE::Rotation`. These appear in `sneeze_abi.h` marked "not implemented yet" and have no SDK wrapper - do not rely on them until they land.
+
+Event delivery through `Notify` is live: it carries [`TIMER`](TIMER.md) fires today, dispatched to [`INSTANCE::Timer`](INSTANCE.md#timer). Other event kinds (node events, for example) are still reserved; a `Notify` packet a module has no hook for is simply ignored, so old modules stay forward-compatible as new event kinds land.
 
 ## See also
 

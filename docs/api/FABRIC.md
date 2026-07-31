@@ -92,6 +92,57 @@ let pNode = pFabric.Scene ().Node_Root (&pRoot);
 
 - **See also:** [`SCENE`](SCENE.md), [`SNEEZE_ABI_MAPOBJECT`](MAPOBJECT.md).
 
+### Chrono
+
+```rust
+pub fn Chrono (&self) -> CHRONO
+```
+
+- **Parameters:** none.
+- **Returns:** the [`CHRONO`](CHRONO.md) view.
+- **Description:** The wall clock. Read the current instant as a scalar (`Time`, `Date`) or as a [`MOMENT`](MOMENT.md) calendar value (`Now`). The clock is global, so this reports the same instant for every fabric.
+- **Example:**
+
+```rust
+let m = pFabric.Chrono ().Now ();
+```
+
+- **See also:** [`CHRONO`](CHRONO.md), [`MOMENT`](MOMENT.md).
+
+### Performance
+
+```rust
+pub fn Performance (&self) -> PERFORMANCE
+```
+
+- **Parameters:** none.
+- **Returns:** the [`PERFORMANCE`](PERFORMANCE.md) view.
+- **Description:** The monotonic high-resolution clock. Use it to measure elapsed durations rather than to read the calendar.
+- **Example:**
+
+```rust
+let nStart = pFabric.Performance ().Now ();
+```
+
+- **See also:** [`PERFORMANCE`](PERFORMANCE.md).
+
+### Timer
+
+```rust
+pub fn Timer (&self) -> TIMER
+```
+
+- **Parameters:** none.
+- **Returns:** the [`TIMER`](TIMER.md) view.
+- **Description:** Arm one-shot (`Set`) or repeating (`Interval`) callbacks; the fire arrives at [`INSTANCE::Timer`](INSTANCE.md#timer). Timers disarm automatically when the fabric closes.
+- **Example:**
+
+```rust
+pFabric.Timer ().Interval (1, eSNEEZE_ABI_TIMER_UNIT::kSNEEZE_ABI_TIMER_UNIT_HZ, 0);
+```
+
+- **See also:** [`TIMER`](TIMER.md), [`INSTANCE::Timer`](INSTANCE.md#timer).
+
 ## Snapshot views
 
 Beyond the live subsystems above, `FABRIC` also exposes the fabric's *immutable* configuration - the [Open snapshot](SNAPSHOT.md) the engine pushed at `Open`. The SDK parses that snapshot once, privately; a module never sees the raw JSON. Each accessor below returns a read-only, typed view of one section. `Resource`/`Signature`/`Agent`/`Container` and the `Services`/`Modules` lists borrow directly from the parsed snapshot (no copy, no boundary crossing); `Location` is computed on demand from the resource reference.

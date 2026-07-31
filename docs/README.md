@@ -26,6 +26,13 @@ Subsystems (reached through `FABRIC`):
 - [SCENE](api/SCENE.md) - node-tree construction.
 - [NODE](api/NODE.md) - per-node property mutation.
 
+Time and scheduling (reached through `FABRIC`):
+
+- [CHRONO](api/CHRONO.md) - the wall clock (a `Date`-namespace analog).
+- [MOMENT](api/MOMENT.md) - a wall-clock instant value (a `Date`-instance analog).
+- [PERFORMANCE](api/PERFORMANCE.md) - the monotonic clock, for elapsed timing.
+- [TIMER](api/TIMER.md) - one-shot and repeating scheduled callbacks.
+
 Scene building:
 
 - [SNEEZE_ABI_MAPOBJECT](api/MAPOBJECT.md) - the fluent builder you fill in and hand to `SCENE` to create a node.
