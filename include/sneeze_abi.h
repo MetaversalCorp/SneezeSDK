@@ -175,7 +175,7 @@ enum eSNEEZE_ABI_METHOD_SCENE
 enum eSNEEZE_ABI_METHOD_NODE
 {
    kSNEEZE_ABI_METHOD_NODE_POSITION                      =  1,
-   kSNEEZE_ABI_METHOD_NODE_ROTATION                      =  2,        // not implemented yet (host new)
+   kSNEEZE_ABI_METHOD_NODE_ROTATION                      =  2,
    kSNEEZE_ABI_METHOD_NODE_SCALE                         =  3,
    kSNEEZE_ABI_METHOD_NODE_SCALE_AXES                    =  4,
    kSNEEZE_ABI_METHOD_NODE_BOUND                         =  5,
