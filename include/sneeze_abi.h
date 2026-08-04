@@ -98,6 +98,9 @@ enum eSNEEZE_ABI_TYPE
    kSNEEZE_ABI_TYPE_SCENE                                =  6,
    kSNEEZE_ABI_TYPE_FABRIC                               =  7,
    kSNEEZE_ABI_TYPE_NODE                                 =  8,
+   kSNEEZE_ABI_TYPE_CHRONO                               =  9,
+   kSNEEZE_ABI_TYPE_PERFORMANCE                          = 10,
+   kSNEEZE_ABI_TYPE_TIMER                                = 11,
 };
 
 // ---------------------------------------------------------------------------
@@ -172,13 +175,45 @@ enum eSNEEZE_ABI_METHOD_SCENE
 enum eSNEEZE_ABI_METHOD_NODE
 {
    kSNEEZE_ABI_METHOD_NODE_POSITION                      =  1,
-   kSNEEZE_ABI_METHOD_NODE_ROTATION                      =  2,        // not implemented yet (host new)
+   kSNEEZE_ABI_METHOD_NODE_ROTATION                      =  2,
    kSNEEZE_ABI_METHOD_NODE_SCALE                         =  3,
    kSNEEZE_ABI_METHOD_NODE_SCALE_AXES                    =  4,
    kSNEEZE_ABI_METHOD_NODE_BOUND                         =  5,
    kSNEEZE_ABI_METHOD_NODE_NAME                          =  6,
    kSNEEZE_ABI_METHOD_NODE_RESOURCE                      =  7,
    kSNEEZE_ABI_METHOD_NODE_PANEL                         =  8,
+};
+
+// CHRONO is the wall clock and the civil (calendar) logic for a MOMENT. The
+// host owns all breakdown / formatting / parsing; the guest caches the filled
+// SNEEZE_ABI_MOMENT and reads it locally. TIME/DATE return bare scalars; the
+// rest fill a SNEEZE_ABI_MOMENT the guest supplied by (offset, length).
+enum eSNEEZE_ABI_METHOD_CHRONO
+{
+   kSNEEZE_ABI_METHOD_CHRONO_TIME                        =  1,   // -> tm  (i64, 1/64 s since 1601, UTC)
+   kSNEEZE_ABI_METHOD_CHRONO_DATE                        =  2,   // -> dt  (i64, Unix ms, UTC)
+   kSNEEZE_ABI_METHOD_CHRONO_NOW                         =  3,   // fill MOMENT for "now"
+   kSNEEZE_ABI_METHOD_CHRONO_MOMENT                      =  4,   // fill MOMENT from a tm or dt scalar
+   kSNEEZE_ABI_METHOD_CHRONO_SET                         =  5,   // fill MOMENT from civil components (normalizes; every component setter routes here)
+   kSNEEZE_ABI_METHOD_CHRONO_PARSE                       =  6,   // fill MOMENT from a string
+   kSNEEZE_ABI_METHOD_CHRONO_FORMAT                      =  7,   // MOMENT + spec -> string
+};
+
+// PERFORMANCE is the monotonic high-resolution clock (JS performance.now).
+// Values are 100 ns since a fixed origin; Origin fills the wall MOMENT at t0.
+enum eSNEEZE_ABI_METHOD_PERFORMANCE
+{
+   kSNEEZE_ABI_METHOD_PERFORMANCE_NOW                    =  1,   // -> pf  (i64, 100 ns since origin, monotonic)
+   kSNEEZE_ABI_METHOD_PERFORMANCE_ORIGIN                 =  2,   // fill MOMENT (wall anchor at t0)
+};
+
+// TIMER schedules one-shot and repeating callbacks. SET/CLEAR are guest -> host;
+// FIRED is the host -> guest Notify event (the first event the ABI defines).
+enum eSNEEZE_ABI_METHOD_TIMER
+{
+   kSNEEZE_ABI_METHOD_TIMER_SET                          =  1,   // arm (eUnit, nValue, qwParam, bRepeat) -> twTimerIx
+   kSNEEZE_ABI_METHOD_TIMER_CLEAR                        =  2,   // disarm by twTimerIx
+   kSNEEZE_ABI_METHOD_TIMER_FIRED                        =  3,   // Notify: (twFabricIx, twTimerIx, qwParam)
 };
 
 // ---------------------------------------------------------------------------
@@ -211,6 +246,23 @@ enum eSNEEZE_ABI_TRUST
    kSNEEZE_ABI_TRUST_EXPIRED                             =  3,
    kSNEEZE_ABI_TRUST_VERIFIED                            =  4,
    kSNEEZE_ABI_TRUST_ROOT                                =  5,
+};
+
+// TIMER_SET's unit discriminant. TICK = TIMEX count (1/64 s); MS = milliseconds;
+// HZ = frequency (period is 1/nValue seconds).
+enum eSNEEZE_ABI_TIMER_UNIT
+{
+   kSNEEZE_ABI_TIMER_UNIT_TICK                           =  0,
+   kSNEEZE_ABI_TIMER_UNIT_MS                             =  1,
+   kSNEEZE_ABI_TIMER_UNIT_HZ                             =  2,
+};
+
+// CHRONO zone selector: how SET interprets its civil input, and which cached
+// view FORMAT renders. (Getters read both views straight from the MOMENT.)
+enum eSNEEZE_ABI_CHRONO_ZONE
+{
+   kSNEEZE_ABI_CHRONO_ZONE_UTC                           =  0,
+   kSNEEZE_ABI_CHRONO_ZONE_LOCAL                         =  1,
 };
 
 // ---------------------------------------------------------------------------
@@ -290,6 +342,49 @@ SNEEZE_ABI_MAPOBJECT, *PSNEEZE_ABI_MAPOBJECT;
 #define SNEEZE_ABI_MAPOBJECT_SIZE      528
 
 // ---------------------------------------------------------------------------
+// SNEEZE_ABI_MOMENT - the guest-resident wall-clock value (CHRONO's MOMENT).
+// Like MAPOBJECT it is a raw binary struct, but it flows host -> guest: the
+// guest supplies a zeroed MOMENT by (offset, length) and the host fills it in
+// one call - both scalar forms (tm, dt) plus the full UTC and local calendar
+// breakdowns - so the guest reads Year/Month/Day/... locally without crossing
+// back. A zeroed MOMENT (bMonth == 0) is the invalid sentinel. Windows
+// SYSTEMTIME conventions: 1-based month, 0-based weekday (Sunday = 0). The
+// sub-second is stored once, canonically, as dwFraction (100 ns units): 1/64 s
+// and 1 ms both divide 100 ns evenly but not each other, so it is the only
+// grain that round-trips both. tick and ms are derived views (tick =
+// dwFraction/156250, ms = dwFraction/10000); tm and dt agree at whole seconds
+// and differ only in that derived sub-second.
+// ---------------------------------------------------------------------------
+
+#pragma pack(push, 1)
+typedef struct tagSNEEZE_ABI_CIVIL                       // one calendar breakdown
+{
+   int16_t                                                 wYear;      // full year (2026)
+   uint8_t                                                 bMonth;     // 1-12 (7 = July); 0 = invalid
+   uint8_t                                                 bDay;       // 1-31
+   uint8_t                                                 bWeekday;   // 0-6 (0 = Sunday)
+   uint8_t                                                 bHour;      // 0-23
+   uint8_t                                                 bMinute;    // 0-59
+   uint8_t                                                 bSecond;    // 0-59
+   uint32_t                                                dwFraction; // sub-second, 100 ns units (0..9,999,999); tick = /156250, ms = /10000
+}
+SNEEZE_ABI_CIVIL, *PSNEEZE_ABI_CIVIL;
+
+typedef struct tagSNEEZE_ABI_MOMENT
+{
+   int64_t                                                 tm;         // 1/64 s since 1601-01-01, UTC
+   int64_t                                                 dt;         // Unix ms since 1970-01-01, UTC
+   SNEEZE_ABI_CIVIL                                        Utc;        // UTC calendar breakdown
+   SNEEZE_ABI_CIVIL                                        Local;      // local calendar breakdown
+   int32_t                                                 nOffset;    // local offset from UTC, minutes
+}
+SNEEZE_ABI_MOMENT, *PSNEEZE_ABI_MOMENT;
+#pragma pack(pop)
+
+#define SNEEZE_ABI_CIVIL_SIZE          12
+#define SNEEZE_ABI_MOMENT_SIZE         44
+
+// ---------------------------------------------------------------------------
 // Payload wire formats.
 //
 // Every payload is a sequence of little-endian scalar fields (no struct
@@ -336,6 +431,25 @@ SNEEZE_ABI_MAPOBJECT, *PSNEEZE_ABI_MAPOBJECT;
 //     NAME       : (i32 nNameOffset, i32 nNameLen)
 //     RESOURCE   : (i32 nUrlOffset, i32 nUrlLen)
 //     PANEL      : (i32 nRmlOffset, i32 nRmlLen)
+//
+//   CHRONO (u64 twFabricIx, then...)  host owns all civil logic; MOMENT is filled out
+//     TIME   : ()                                                    -> i64 tm (1/64 s, 1601, UTC)
+//     DATE   : ()                                                    -> i64 dt (Unix ms, UTC)
+//     NOW    : (i32 nMomOffset, i32 nMomLen)                         -> 0/1  (fills MOMENT)
+//     MOMENT : (i32 eSource, i64 qwValue, i32 nMomOffset, i32 nMomLen) -> 0/1  (eSource: 0 = tm, 1 = dt)
+//     SET    : (i32 eZone, i32 wYear, i32 bMonth, i32 bDay, i32 bHour, i32 bMinute, i32 bSecond, i32 nFraction, i32 nMomOffset, i32 nMomLen) -> 0/1  (normalizes overflow; nFraction = sub-second in 100 ns units)
+//     PARSE  : (i32 eZone, i32 nStrOffset, i32 nStrLen, i32 nMomOffset, i32 nMomLen) -> 0/1
+//     FORMAT : (i32 eZone, i32 nSpecOffset, i32 nSpecLen, i32 nMomOffset, i32 nMomLen, i32 nOutOffset, i32 nOutLen) -> size
+//
+//   PERFORMANCE (u64 twFabricIx, then...)
+//     NOW    : ()                                                    -> i64 pf (100 ns since origin, monotonic)
+//     ORIGIN : (i32 nMomOffset, i32 nMomLen)                         -> 0/1  (wall MOMENT at t0)
+//
+//   TIMER (u64 twFabricIx, then...)
+//     SET    : (i32 eUnit, i32 nValue, u64 qwParam, i32 bRepeat)     -> twTimerIx  (0 = failure)
+//     CLEAR  : (u64 twTimerIx)                                       -> 0/1
+//   TIMER Notify (host -> guest, packet handed to the Notify export):
+//     FIRED  : (u64 twFabricIx, u64 twTimerIx, u64 qwParam)
 //
 // Flat C API name reference (the ergonomic C binding, layered on Call by a
 // future sneeze.c): Console_Log/Debug/.../TimeLog; Storage_Has/Get/Set/Remove;

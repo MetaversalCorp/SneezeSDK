@@ -97,13 +97,36 @@ fn Shutdown ()
 
 - **See also:** [`Init`](#init) (its mirror).
 
+### Timer
+
+```rust
+fn Timer (pFabric: FABRIC, twTimerIx: u64, qwParam: u64) {}
+```
+
+- **Parameters:**
+  - `pFabric` - the [`FABRIC`](FABRIC.md) that armed the timer.
+  - `twTimerIx` - the id returned by [`TIMER::Set`](TIMER.md#set) or [`TIMER::Interval`](TIMER.md#interval) when the timer was armed.
+  - `qwParam` - the opaque cookie you passed when arming; the engine echoes it back so one handler can tell its timers apart.
+- **Returns:** nothing.
+- **Description:** Called when a [`TIMER`](TIMER.md) you armed fires. Unlike the lifecycle methods, this is asynchronous - it arrives between `Open` and `Close` for the arming fabric, possibly many times for a repeating timer. Leave it as the default empty body if your module arms no timers.
+- **Example:**
+
+```rust
+fn Timer (pFabric: FABRIC, twTimerIx: u64, qwParam: u64)
+{
+   pFabric.Console ().Log (&format! ("timer {} fired (param {})", twTimerIx, qwParam));
+}
+```
+
+- **See also:** [`TIMER`](TIMER.md).
+
 ## The instance! macro
 
 ```rust
 sneeze::instance! (MY_MODULE);
 ```
 
-Place this once, at module scope, passing the type that implements `INSTANCE`. It generates the seven raw ABI exports the engine looks up by name - `Init`, `Open`, `Close`, `Shutdown`, `Alloc`, `Free`, `Notify` - and routes each to your implementation (or to the SDK's own memory management, for `Alloc`/`Free`, and to the currently-inert `Notify`). You never write those exports yourself.
+Place this once, at module scope, passing the type that implements `INSTANCE`. It generates the seven raw ABI exports the engine looks up by name - `Init`, `Open`, `Close`, `Shutdown`, `Alloc`, `Free`, `Notify` - and routes each to your implementation (or to the SDK's own memory management, for `Alloc`/`Free`). The generated `Notify` decodes each host event and dispatches it to the matching hook - today a timer fire to [`Timer`](#timer); an event with no hook is ignored. You never write those exports yourself.
 
 - **Description:** Without this macro the engine cannot find your module's entry points, because it resolves them as named WASM exports. The macro is the one required piece of boilerplate.
 - **Example:**

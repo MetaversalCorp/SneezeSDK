@@ -1,3 +1,9 @@
 [submodule "Rust"]
 	path = Rust
 	url = https://github.com/MetaversalCorp/SneezeSDK_Rust.git
+[submodule "C"]
+	path = C
+	url = https://github.com/MetaversalCorp/SneezeSDK_C.git
+[submodule "Cpp"]
+	path = Cpp
+	url = https://github.com/MetaversalCorp/SneezeSDK_CPP.git
