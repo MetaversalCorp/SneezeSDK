@@ -7,3 +7,9 @@
 [submodule "Cpp"]
 	path = Cpp
 	url = https://github.com/MetaversalCorp/SneezeSDK_CPP.git
+[submodule "CS"]
+	path = CS
+	url = https://github.com/MetaversalCorp/SneezeSDK_CS.git
+[submodule "AS"]
+	path = AS
+	url = https://github.com/MetaversalCorp/SneezeSDK_AS.git

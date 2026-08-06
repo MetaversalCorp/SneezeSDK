@@ -10,6 +10,8 @@ A module talks to the engine across one narrow, frozen interface (the ABI). You 
 2. [API overview](api/overview.md) - the object model: the `HOST` root, the `Open` lifecycle, how the pieces fit together.
 3. The per-class pages below - one page per class, each documenting every method with its declaration, parameters, return value, a description, an example, and related methods.
 
+Writing in C? See [The C SDK](c-sdk.md) for the Emscripten setup and the full flat C function reference; the per-class pages below still describe the semantics.
+
 ## API reference
 
 Lifecycle and core:
@@ -53,4 +55,4 @@ Snapshot views (read from the `Open` snapshot through `HOST`):
 - Function and method names are TitleCase (`Node_Root ()`, `Console ()`).
 - Parameters carry a type prefix (Hungarian): `s` string, `n` number, `d` double, `b` bool, `tw`/`qw` 64-bit, `dw` 32-bit, `p` pointer/object.
 - Names are kept identical across languages and across the engine wherever the same concept exists.
-- Code examples are Rust (the only SDK shipped so far). The prose is language-neutral; a C or Go author reads the same method semantics and applies them through that language's binding.
+- Code examples on the per-class pages are Rust. The prose is language-neutral; a C author reads the same method semantics and applies them through the [C binding](c-sdk.md) (which lists every C signature), and a Go or other author applies them through that language's binding.
