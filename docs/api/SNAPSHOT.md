@@ -1,6 +1,6 @@
 # The Open Snapshot
 
-When a fabric opens your module, the engine hands it an **immutable snapshot**: a JSON document, synthesized for that one fabric, describing everything fixed about it. This is a *concept*, not a type you handle - the SDK reads it for you and exposes it through the [`FABRIC`](FABRIC.md) handle. This page explains where the data comes from and how you reach it.
+When a fabric opens your module, the engine hands it an **immutable snapshot**: a JSON document, synthesized for that one fabric, describing everything fixed about it. This is a *concept*, not a type you handle - the SDK reads it for you and exposes it through the [`HOST`](HOST.md) handle. This page explains where the data comes from and how you reach it.
 
 ## What is in it
 
@@ -8,15 +8,14 @@ The snapshot carries fixed-shape sections, each surfaced as a typed view off the
 
 | Section | Reached through | Page |
 |---------|-----------------|------|
-| The launching resource | `pFabric.Resource ()` | [RESOURCE](RESOURCE.md) |
-| The fabric URL (split into parts) | `pFabric.Location ()` | [LOCATION](LOCATION.md) |
-| Container identity and trust | `pFabric.Container ()` | [CONTAINER](CONTAINER.md) |
-| MSF signature-verification result | `pFabric.Signature ()` | [SIGNATURE](SIGNATURE.md) |
-| Host / engine identity | `pFabric.Agent ()` | [AGENT](AGENT.md) |
-| Declared services | `pFabric.Services ()` | [SERVICE](SERVICE.md) |
-| Declared WASM modules | `pFabric.Modules ()` | [MODULE](MODULE.md) |
+| The launching resource | `pHost.Resource ()` | [RESOURCE](RESOURCE.md) |
+| The fabric URL (split into parts) | `pHost.Location ()` | [LOCATION](LOCATION.md) |
+| Container identity and trust | `pHost.Container ()` | [CONTAINER](CONTAINER.md) |
+| MSF signature-verification result | `pHost.Signature ()` | [SIGNATURE](SIGNATURE.md) |
+| Host / engine identity | `pHost.Agent ()` | [AGENT](AGENT.md) |
+| Declared WASM modules | `pHost.Modules ()` | [MODULE](MODULE.md) |
 
-The fabric's open-ended configuration `Data` block is **not** in the snapshot. It is served on demand, read-only, through [`DATA`](DATA.md), so a large data block never inflates the snapshot.
+The fabric's open-ended configuration `Data` block is **not** in the snapshot. It is served on demand, read-only, through [`DATA`](DATA.md), so a large data block never inflates the snapshot. The fabric's declared **services** are likewise served on demand (by name), through [`SERVICES`](SERVICES.md).
 
 ## How it reaches you
 
@@ -30,14 +29,14 @@ Because the snapshot is arbitrary-length data, the engine cannot pass it as a ca
 The raw bytes are transient - valid only during that handshake - which is exactly why the SDK copies them into an owned record up front. You never see the offset, the size, or the JSON text: you read the parsed data through the fabric's typed views for the life of the module.
 
 ```rust
-fn Open (pFabric: FABRIC)
+fn Open (pHost: &HOST)
 {
-   pFabric.Console ().Log (pFabric.Container ().Name ());
-   pFabric.Console ().Log (pFabric.Location ().Host ());
+   pHost.Console ().Log (pHost.Container ().Name ());
+   pHost.Console ().Log (pHost.Location ().Host ());
 
-   for pModule in pFabric.Modules ()
+   for pModule in pHost.Modules ()
    {
-      pFabric.Console ().Log (pModule.Url ());
+      pHost.Console ().Log (pModule.Url ());
    }
 }
 ```
@@ -46,6 +45,6 @@ Every field is defaulted, so a missing, partial, or rearranged snapshot yields e
 
 ## See also
 
-- [FABRIC](FABRIC.md) - the handle every snapshot view hangs off.
+- [HOST](HOST.md) - the handle every snapshot view hangs off.
 - [INSTANCE::Open](INSTANCE.md#open) - where the snapshot arrives.
 - [Incorporating the ABI](../incorporating-the-abi.md#the-open-handshake) - the raw `Alloc`/`Open`/`Free` push handshake beneath this.

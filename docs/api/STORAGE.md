@@ -1,6 +1,6 @@
 # STORAGE
 
-Persistent JSON document storage for a module, reached through [`FABRIC::Storage`](FABRIC.md#storage). Use it to save state between sessions - settings, progress, cached results. `STORAGE` is a zero-cost view over the fabric handle.
+Persistent JSON document storage for a module, reached through [`HOST::Storage`](HOST.md#storage). Use it to save state between sessions - settings, progress, cached results. `STORAGE` is a zero-cost view over the fabric handle.
 
 Values cross the boundary as **JSON text** in both directions. The SDK does not impose a JSON library: `Set` takes a JSON string you produced, `Get` returns a JSON string you parse. Pick whatever JSON facility you like (or none, for plain scalars).
 
@@ -38,7 +38,7 @@ pub fn Has (&self, eScope: eSNEEZE_ABI_SILO_SCOPE, sPath: &str) -> bool
 
 ```rust
 use eSNEEZE_ABI_SILO_SCOPE::*;
-if pFabric.Storage ().Has (kSNEEZE_ABI_SILO_SCOPE_PERMANENT_CONTAINER, "settings")
+if pHost.Storage ().Has (kSNEEZE_ABI_SILO_SCOPE_PERMANENT_CONTAINER, "settings")
 {
    // restore from settings
 }
@@ -61,7 +61,7 @@ pub fn Get (&self, eScope: eSNEEZE_ABI_SILO_SCOPE, sPath: &str) -> Option<String
 
 ```rust
 use eSNEEZE_ABI_SILO_SCOPE::*;
-if let Some (sJson) = pFabric.Storage ().Get (kSNEEZE_ABI_SILO_SCOPE_PERMANENT_CONTAINER, "settings")
+if let Some (sJson) = pHost.Storage ().Get (kSNEEZE_ABI_SILO_SCOPE_PERMANENT_CONTAINER, "settings")
 {
    // parse sJson with your JSON crate
 }
@@ -85,7 +85,7 @@ pub fn Set (&self, eScope: eSNEEZE_ABI_SILO_SCOPE, sPath: &str, sJson: &str) -> 
 
 ```rust
 use eSNEEZE_ABI_SILO_SCOPE::*;
-pFabric.Storage ().Set (kSNEEZE_ABI_SILO_SCOPE_PERMANENT_CONTAINER, "settings.volume", "0.8");
+pHost.Storage ().Set (kSNEEZE_ABI_SILO_SCOPE_PERMANENT_CONTAINER, "settings.volume", "0.8");
 ```
 
 - **See also:** [`Get`](#get), [`Remove`](#remove).
@@ -105,7 +105,7 @@ pub fn Remove (&self, eScope: eSNEEZE_ABI_SILO_SCOPE, sPath: &str) -> bool
 
 ```rust
 use eSNEEZE_ABI_SILO_SCOPE::*;
-pFabric.Storage ().Remove (kSNEEZE_ABI_SILO_SCOPE_PERMANENT_CONTAINER, "settings.volume");
+pHost.Storage ().Remove (kSNEEZE_ABI_SILO_SCOPE_PERMANENT_CONTAINER, "settings.volume");
 ```
 
 - **See also:** [`Set`](#set).

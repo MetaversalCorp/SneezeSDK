@@ -61,13 +61,14 @@ extern "C" {
 #define SNEEZE_ABI_VERSION      1
 
 // ---------------------------------------------------------------------------
-// Handles. HFABRIC and HNODE are 64-bit value handles (a fabric index and an
-// object index respectively - not pointers, since both exceed a wasm32
-// pointer). HMAPOBJECT is an opaque pointer to a guest-local builder. C gives
-// these no type safety (all uint64_t); the Rust SDK wraps them in newtypes.
+// Handles. HNODE is a 64-bit value handle (an object index - not a pointer,
+// since it exceeds a wasm32 pointer). HMAPOBJECT is an opaque pointer to a
+// guest-local builder. The fabric itself is reached through a guest-SDK HOST
+// handle (see the language SDKs), which carries the u64 fabric index the wire
+// formats below call twFabricIx. C gives HNODE/HMAPOBJECT no type safety (bare
+// integers); the Rust SDK wraps them in newtypes.
 // ---------------------------------------------------------------------------
 
-typedef uint64_t   HFABRIC;
 typedef uint64_t   HNODE;
 typedef uint32_t   HMAPOBJECT;
 
@@ -101,6 +102,7 @@ enum eSNEEZE_ABI_TYPE
    kSNEEZE_ABI_TYPE_CHRONO                               =  9,
    kSNEEZE_ABI_TYPE_PERFORMANCE                          = 10,
    kSNEEZE_ABI_TYPE_TIMER                                = 11,
+   kSNEEZE_ABI_TYPE_SERVICES                             = 12,
 };
 
 // ---------------------------------------------------------------------------
@@ -160,16 +162,34 @@ enum eSNEEZE_ABI_METHOD_VIEWPORT
 
 enum eSNEEZE_ABI_METHOD_SCENE
 {
-   kSNEEZE_ABI_METHOD_SCENE_NODE_ROOT                    =  1,
-   kSNEEZE_ABI_METHOD_SCENE_NODE_MAP                     =  2,
-   kSNEEZE_ABI_METHOD_SCENE_NODE_OPEN                    =  3,
-   kSNEEZE_ABI_METHOD_SCENE_NODE_CLOSE                   =  4,
-   kSNEEZE_ABI_METHOD_SCENE_AMBIENT_GET                  =  5,        // not implemented yet (host new)
-   kSNEEZE_ABI_METHOD_SCENE_AMBIENT_SET                  =  6,        // not implemented yet (host new)
-   kSNEEZE_ABI_METHOD_SCENE_DIRECTIONAL_GET              =  7,        // not implemented yet (host new)
-   kSNEEZE_ABI_METHOD_SCENE_DIRECTIONAL_SET              =  8,        // not implemented yet (host new)
-   kSNEEZE_ABI_METHOD_SCENE_BACKGROUND_GET               =  9,        // not implemented yet (host new)
-   kSNEEZE_ABI_METHOD_SCENE_BACKGROUND_SET               = 10,        // not implemented yet (host new)
+   kSNEEZE_ABI_METHOD_SCENE_NODE_ROOT                    =  1,        // DEPRECATED - use FABRIC_NODE_ROOT instead
+   kSNEEZE_ABI_METHOD_SCENE_NODE_MAP_DATA                =  2,        // DEPRECATED - use FABRIC_NODE_MAP_DATA instead
+   kSNEEZE_ABI_METHOD_SCENE_NODE_OPEN                    =  3,        // DEPRECATED - use FABRIC_NODE_OPEN instead
+   kSNEEZE_ABI_METHOD_SCENE_NODE_CLOSE                   =  4,        // DEPRECATED - use FABRIC_NODE_CLOSE instead
+/*
+   kSNEEZE_ABI_METHOD_SCENE_AMBIENT_GET                  =  1,        // not implemented yet (host new)
+   kSNEEZE_ABI_METHOD_SCENE_AMBIENT_SET                  =  2,        // not implemented yet (host new)
+   kSNEEZE_ABI_METHOD_SCENE_DIRECTIONAL_GET              =  3,        // not implemented yet (host new)
+   kSNEEZE_ABI_METHOD_SCENE_DIRECTIONAL_SET              =  4,        // not implemented yet (host new)
+   kSNEEZE_ABI_METHOD_SCENE_BACKGROUND_GET               =  5,        // not implemented yet (host new)
+   kSNEEZE_ABI_METHOD_SCENE_BACKGROUND_SET               =  6,        // not implemented yet (host new)
+*/
+};
+
+// FABRIC (type 7) builds and manages the fabric's node tree on its container.
+// The first two methods hand the fabric to a browser-assigned map service
+// (after which the guest no longer mutates its nodes directly); the remaining
+// four are the guest-assigned node-tree calls. These six supersede the
+// deprecated SCENE_NODE_* methods (type 6), which remain only so already-
+// deployed modules keep working until they are migrated.
+enum eSNEEZE_ABI_METHOD_FABRIC
+{
+   kSNEEZE_ABI_METHOD_FABRIC_NODE_MAP_SERVICE            =  1,        // connect a map service from a caller-filled SNEEZE_ABI_MAP_SERVICE
+   kSNEEZE_ABI_METHOD_FABRIC_NODE_MAP_SERVICE_EX         =  2,        // connect a map service the host reads from the fabric's Services[name]
+   kSNEEZE_ABI_METHOD_FABRIC_NODE_MAP_DATA               =  3,
+   kSNEEZE_ABI_METHOD_FABRIC_NODE_ROOT                   =  4,
+   kSNEEZE_ABI_METHOD_FABRIC_NODE_OPEN                   =  5,
+   kSNEEZE_ABI_METHOD_FABRIC_NODE_CLOSE                  =  6,
 };
 
 enum eSNEEZE_ABI_METHOD_NODE
@@ -214,6 +234,16 @@ enum eSNEEZE_ABI_METHOD_TIMER
    kSNEEZE_ABI_METHOD_TIMER_SET                          =  1,   // arm (eUnit, nValue, qwParam, bRepeat) -> twTimerIx
    kSNEEZE_ABI_METHOD_TIMER_CLEAR                        =  2,   // disarm by twTimerIx
    kSNEEZE_ABI_METHOD_TIMER_FIRED                        =  3,   // Notify: (twFabricIx, twTimerIx, qwParam)
+};
+
+// SERVICES is the fabric's declared services, served read-only and on-demand,
+// keyed by service name (the DATA model - one level by name rather than a
+// dotted path). Get returns the named service's whole JSON object as text for
+// the guest to parse itself.
+enum eSNEEZE_ABI_METHOD_SERVICES
+{
+   kSNEEZE_ABI_METHOD_SERVICES_HAS                       =  1,
+   kSNEEZE_ABI_METHOD_SERVICES_GET                       =  2,
 };
 
 // ---------------------------------------------------------------------------
@@ -342,6 +372,34 @@ SNEEZE_ABI_MAPOBJECT, *PSNEEZE_ABI_MAPOBJECT;
 #define SNEEZE_ABI_MAPOBJECT_SIZE      528
 
 // ---------------------------------------------------------------------------
+// SNEEZE_ABI_MAP_SERVICE - the 592-byte binary wire struct for a map-service
+// connection. Like MAPOBJECT it stays raw binary (not field-serialized) and
+// flows guest -> host by (offset, length): the guest fills it (from its own
+// knowledge, or from Services_Get(name) which it parses) and hands it to
+// SCENE MAP_SERVICE; the MAP_SERVICE_EX variant instead names a service the
+// host reads from the fabric's Services[name] and fills this struct itself.
+// wClass/twObjectIx are kept adjacent (an OBJECTIX pair); abReserved pads the
+// bAuth..wClass group to 8 bytes so twObjectIx lands 8-aligned.
+// ---------------------------------------------------------------------------
+
+#pragma pack(push, 1)
+typedef struct tagSNEEZE_ABI_MAP_SERVICE
+{
+   char                                                     sNamespace[32];
+   char                                                     sService[32];
+   char                                                     sConnect[256];
+   char                                                     sRootUrl[256];
+   uint8_t                                                  bAuth;
+   uint8_t                                                  abReserved[5];
+   uint16_t                                                 wClass;
+   uint64_t                                                 twObjectIx;
+}
+SNEEZE_ABI_MAP_SERVICE, *PSNEEZE_ABI_MAP_SERVICE;
+#pragma pack(pop)
+
+#define SNEEZE_ABI_MAP_SERVICE_SIZE    592
+
+// ---------------------------------------------------------------------------
 // SNEEZE_ABI_MOMENT - the guest-resident wall-clock value (CHRONO's MOMENT).
 // Like MAPOBJECT it is a raw binary struct, but it flows host -> guest: the
 // guest supplies a zeroed MOMENT by (offset, length) and the host fills it in
@@ -417,14 +475,30 @@ SNEEZE_ABI_MOMENT, *PSNEEZE_ABI_MOMENT;
 //     SET    : (i32 nPathOffset, i32 nPathLen, i32 nValOffset, i32 nValLen) -> 0/1
 //     REMOVE : (i32 nPathOffset, i32 nPathLen)                        -> 0/1
 //
-//   SCENE
-//     NODE_ROOT  : (u64 twFabricIx, i32 nObjOffset, i32 nObjLen)      -> qwComposed
-//     NODE_MAP   : (u64 twFabricIx, i32 nPathOffset, i32 nPathLen)    -> qwComposed
-//     NODE_OPEN  : (i32 nObjOffset, i32 nObjLen)                     -> qwComposed  (parent read from the object's Head.Parent)
-//     NODE_CLOSE : (u64 qwComposed)                                   -> 0/1
+//   SCENE (DEPRECATED - identical wire to the matching FABRIC method; retained
+//   only so already-deployed modules keep working)
+//     NODE_ROOT          : deprecated
+//     NODE_MAP_DATA      : deprecated
+//     NODE_OPEN          : deprecated
+//     NODE_CLOSE         : deprecated
+//     AMBIENT_GET        : tbd
+//     AMBIENT_SET        : tbd
+//     DIRECTIONAL_GET    : tbd
+//     DIRECTIONAL_SET    : tbd
+//     BACKGROUND_GET     : tbd
+//     BACKGROUND_SET     : tbd
+//
+//   FABRIC (the node-tree API; supersedes the deprecated SCENE_NODE_* methods)
+//     NODE_MAP_SERVICE   : (u64 twFabricIx, i32 nSvcOffset, i32 nSvcLen)   -> 0/1  (nSvc points at a SNEEZE_ABI_MAP_SERVICE)
+//     NODE_MAP_SERVICE_EX: (u64 twFabricIx, i32 nNameOffset, i32 nNameLen) -> 0/1  (host reads Services[name])
+//     NODE_MAP_DATA      : (u64 twFabricIx, i32 nPathOffset, i32 nPathLen) -> qwComposed
+//     NODE_ROOT          : (u64 twFabricIx, i32 nObjOffset, i32 nObjLen)   -> qwComposed
+//     NODE_OPEN          : (i32 nObjOffset, i32 nObjLen)                   -> qwComposed  (parent read from the object's Head.Parent)
+//     NODE_CLOSE         : (u64 qwComposed)                               -> 0/1
 //
 //   NODE (u64 qwComposed, then...)
 //     POSITION   : (f64 dX, f64 dY, f64 dZ)
+//     ROTATION   : (f64 dX, f64 dY, f64 dZ, f64 dW)   (quaternion)
 //     SCALE      : (f64 dScale)
 //     SCALE_AXES : (f64 dX, f64 dY, f64 dZ)
 //     BOUND      : (f64 dX, f64 dY, f64 dZ)
@@ -451,13 +525,18 @@ SNEEZE_ABI_MOMENT, *PSNEEZE_ABI_MOMENT;
 //   TIMER Notify (host -> guest, packet handed to the Notify export):
 //     FIRED  : (u64 twFabricIx, u64 twTimerIx, u64 qwParam)
 //
-// Flat C API name reference (the ergonomic C binding, layered on Call by a
-// future sneeze.c): Console_Log/Debug/.../TimeLog; Storage_Has/Get/Set/Remove;
+//   SERVICES (twFabricIx, then...)  read-only; keyed by service name
+//     HAS : (i32 nNameOffset, i32 nNameLen)                           -> bool
+//     GET : (i32 nNameOffset, i32 nNameLen, i32 nOutOffset, i32 nOutLen) -> size
+//
+// Flat C API name reference (the ergonomic C binding, layered on Call by
+// sneeze.c): Console_Log/Debug/.../TimeLog; Storage_Has/Get/Set/Remove;
 // Data_Has/Get; Network_Fetch; Viewport_Position_Get/Set, Viewport_Rotation_Get/Set;
-// Scene_Node_Root/Map/Open/Close, Scene_Ambient_Get/Set,
-// Scene_Directional_Get/Set, Scene_Background_Get/Set; Node_Position/Rotation/
-// Scale/Scale_Axes/Bound/Name/Resource/Panel. Singleton subsystems take
-// HFABRIC; node methods take HNODE; builders take HMAPOBJECT.
+// Fabric_Node_Map_Service/Map_Service_Ex/Map_Data/Root/Open/Close (the node-tree
+// API); Scene_Node_Root/Map_Data/Open/Close (DEPRECATED), Scene_Ambient_Get/Set,
+// Scene_Directional_Get/Set, Scene_Background_Get/Set; Services_Has/Get; Node_Position/
+// Rotation/Scale/Scale_Axes/Bound/Name/Resource/Panel. Every call takes the
+// HOST* handle first; node methods also take HNODE; builders take HMAPOBJECT.
 // ---------------------------------------------------------------------------
 
 #ifdef __cplusplus

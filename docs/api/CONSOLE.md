@@ -1,6 +1,6 @@
 # CONSOLE
 
-Developer-console logging for a fabric, reached through [`FABRIC::Console`](FABRIC.md#console). Lines are forwarded to the container's log stream, where the host application surfaces them (a `console.*` analog). `CONSOLE` is a zero-cost view over the fabric handle.
+Developer-console logging for a fabric, reached through [`HOST::Console`](HOST.md#console). Lines are forwarded to the container's log stream, where the host application surfaces them (a `console.*` analog). `CONSOLE` is a zero-cost view over the fabric handle.
 
 Most methods take a single message string and differ only in severity or grouping behavior. They all share the same shape, so the per-method entries below are brief; the two that differ (`Assert`, `Group_End`) are called out.
 
@@ -22,7 +22,7 @@ pub fn Error (&self, sText: &str)
 - **Example:**
 
 ```rust
-let pConsole = pFabric.Console ();
+let pConsole = pHost.Console ();
 pConsole.Log   ("scene built");
 pConsole.Warn  ("texture missing, using fallback");
 pConsole.Error ("failed to parse data");
@@ -44,7 +44,7 @@ pub fn Assert (&self, bCondition: bool, sText: &str)
 - **Example:**
 
 ```rust
-pFabric.Console ().Assert (pFabric.Modules ().len () > 0, "manifest has no modules");
+pHost.Console ().Assert (pHost.Modules ().len () > 0, "manifest has no modules");
 ```
 
 - **See also:** [`Error`](#severity-methods).
@@ -65,7 +65,7 @@ pub fn Group_End       (&self)
 - **Example:**
 
 ```rust
-let pConsole = pFabric.Console ();
+let pConsole = pHost.Console ();
 pConsole.Group ("loading assets");
 pConsole.Log ("Stool.glb");
 pConsole.Log ("Bucket.glb");
@@ -87,7 +87,7 @@ pub fn Count_Reset (&self, sText: &str)
 - **Example:**
 
 ```rust
-pFabric.Console ().Count ("nodes-created");
+pHost.Console ().Count ("nodes-created");
 ```
 
 - **See also:** [`Time`](#time-time_end-time_log).
@@ -106,7 +106,7 @@ pub fn Time_Log (&self, sText: &str)
 - **Example:**
 
 ```rust
-let pConsole = pFabric.Console ();
+let pConsole = pHost.Console ();
 pConsole.Time ("build");
 // ... build the scene ...
 pConsole.Time_End ("build");

@@ -1,6 +1,6 @@
 # SNEEZE_ABI_MAPOBJECT
 
-The fluent builder for a scene object. You fill one in guest memory, then hand it to [`SCENE::Node_Root`](SCENE.md#node_root) or [`SCENE::Node_Open`](SCENE.md#node_open) to create a [`NODE`](NODE.md). It is a 528-byte binary wire struct whose layout mirrors the engine's `MAP_OBJECT` field for field; a compile-time assert guards its size.
+The fluent builder for a scene object. You fill one in guest memory, then hand it to [`FABRIC::Node_Root`](FABRIC.md#node_root) or [`FABRIC::Node_Open`](FABRIC.md#node_open) to create a [`NODE`](NODE.md). It is a 528-byte binary wire struct whose layout mirrors the engine's `MAP_OBJECT` field for field; a compile-time assert guards its size.
 
 Unlike everything else in the SDK, a map object crosses the boundary as **raw bytes**, not a serialized packet - the create call passes its `(offset, length)`. The builder setters return `&mut Self`, so calls chain.
 
@@ -28,7 +28,7 @@ pub fn New (wClass: u16) -> Self // explicit class id
 let mut pObj = SNEEZE_ABI_MAPOBJECT::Physical ();
 ```
 
-- **See also:** [`Index`](#index), [`SCENE`](SCENE.md).
+- **See also:** [`Index`](#index), [`FABRIC`](FABRIC.md).
 
 ## Identity
 
@@ -40,8 +40,8 @@ pub fn Parent (&mut self, wClass: u16, twObjectIx: u64) -> &mut Self
 
 - **Parameters:** `wClass` - the parent's class; `twObjectIx` - the parent's object index.
 - **Returns:** `&mut Self` (chainable).
-- **Description:** Sets the parent by composing the parent's class and object index into the object's Head. This is how [`Scene::Node_Open`](SCENE.md#node_open) learns where to attach the new node - it reads the composed parent straight out of the Head. Name any parent object index you like; when you have the parent as a live `NODE`, pass `pParent.Class (), pParent.ObjectIx ()`.
-- **See also:** [`ObjectIx`](#objectix), [`SCENE::Node_Open`](SCENE.md#node_open).
+- **Description:** Sets the parent by composing the parent's class and object index into the object's Head. This is how [`FABRIC::Node_Open`](FABRIC.md#node_open) learns where to attach the new node - it reads the composed parent straight out of the Head. Name any parent object index you like; when you have the parent as a live `NODE`, pass `pParent.Class (), pParent.ObjectIx ()`.
+- **See also:** [`ObjectIx`](#objectix), [`FABRIC::Node_Open`](FABRIC.md#node_open).
 
 ### ObjectIx
 
@@ -200,5 +200,5 @@ pub const SIZE: usize = 528;
 pub fn Pointer (&self) -> *const u8
 ```
 
-- **Description:** `SIZE` is the fixed byte length of the struct; `Pointer` returns the address of its bytes. The SDK uses these internally to pass the object to `SCENE`; you rarely call them directly.
-- **See also:** [`SCENE::Node_Root`](SCENE.md#node_root).
+- **Description:** `SIZE` is the fixed byte length of the struct; `Pointer` returns the address of its bytes. The SDK uses these internally to pass the object to `FABRIC`; you rarely call them directly.
+- **See also:** [`FABRIC::Node_Root`](FABRIC.md#node_root).

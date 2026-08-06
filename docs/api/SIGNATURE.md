@@ -1,6 +1,6 @@
 # SIGNATURE
 
-The MSF signature-verification result for the fabric. Reached through [`FABRIC::Signature`](FABRIC.md#snapshot-views), a read-only view over the [Open snapshot](SNAPSHOT.md).
+The MSF signature-verification result for the fabric. Reached through [`HOST::Signature`](HOST.md#snapshot-views), a read-only view over the [Open snapshot](SNAPSHOT.md).
 
 Where [`CONTAINER`](CONTAINER.md)`::Trust ()` gives the single overall trust level, `SIGNATURE` gives the underlying detail that produced it.
 
@@ -16,22 +16,22 @@ Where [`CONTAINER`](CONTAINER.md)`::Trust ()` gives the single overall trust lev
 ## Usage
 
 ```rust
-fn Open (pFabric: FABRIC)
+fn Open (pHost: HOST)
 {
-   let pSig = pFabric.Signature ();
+   let pSig = pHost.Signature ();
 
    if pSig.IsValid ()  &&  pSig.IsChainTrusted ()  &&  !pSig.IsChainExpired ()
    {
-      pFabric.Console ().Info ("fully verified");
+      pHost.Console ().Info ("fully verified");
    }
    else
    {
-      pFabric.Console ().Warn (pSig.Algorithm ());
+      pHost.Console ().Warn (pSig.Algorithm ());
    }
 }
 ```
 
 ## See also
 
-- [FABRIC](FABRIC.md#snapshot-views) - how to obtain the view.
+- [HOST](HOST.md#snapshot-views) - how to obtain the view.
 - [CONTAINER](CONTAINER.md) - the summarized trust level.
