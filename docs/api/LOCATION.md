@@ -1,6 +1,6 @@
 # LOCATION
 
-A URL split into its parts - a `window.location` analog. You get the fabric's own address from [`FABRIC::Location`](FABRIC.md#snapshot-views), which builds a `LOCATION` from the launching [`RESOURCE`](RESOURCE.md)'s reference (the fabric URL). Because it is a general URL parser, you can also construct one directly from any URL with [`New`](#new), the way the web's `URL` class works.
+A URL split into its parts - a `window.location` analog. You get the fabric's own address from [`HOST::Location`](HOST.md#snapshot-views), which builds a `LOCATION` from the launching [`RESOURCE`](RESOURCE.md)'s reference (the fabric URL). Because it is a general URL parser, you can also construct one directly from any URL with [`New`](#new), the way the web's `URL` class works.
 
 The parts are read-only: there are no setter methods, only the getters below.
 
@@ -14,13 +14,13 @@ pub fn New (sUrl: &str) -> Self
 
 - **Parameters:** `sUrl` - any URL to split.
 - **Returns:** a `LOCATION` with the parts filled in.
-- **Description:** Splits a URL into protocol / host / pathname. `FABRIC::Location` calls this for you against the fabric's reference, but it is public so you can reuse the same splitting on any URL. For a URL with no scheme, protocol and host are empty and the whole string is treated as the pathname.
+- **Description:** Splits a URL into protocol / host / pathname. `HOST::Location` calls this for you against the fabric's reference, but it is public so you can reuse the same splitting on any URL. For a URL with no scheme, protocol and host are empty and the whole string is treated as the pathname.
 - **Example:**
 
 ```rust
 let pLoc = LOCATION::New ("https://cdn.rp1.com/sneeze/examples/stool.json");
-pFabric.Console ().Log (pLoc.Host ());       // cdn.rp1.com
-pFabric.Console ().Log (pLoc.Pathname ());   // /sneeze/examples/stool.json
+pHost.Console ().Log (pLoc.Host ());       // cdn.rp1.com
+pHost.Console ().Log (pLoc.Pathname ());   // /sneeze/examples/stool.json
 ```
 
 ### Href
@@ -66,16 +66,16 @@ pub fn Origin (&self) -> String
 ## Usage
 
 ```rust
-fn Open (pFabric: FABRIC)
+fn Open (pHost: HOST)
 {
-   let pLoc = pFabric.Location ();
+   let pLoc = pHost.Location ();
 
-   pFabric.Console ().Log (pLoc.Href ());
-   pFabric.Console ().Log (&pLoc.Origin ());
+   pHost.Console ().Log (pLoc.Href ());
+   pHost.Console ().Log (&pLoc.Origin ());
 }
 ```
 
 ## See also
 
-- [FABRIC](FABRIC.md#snapshot-views) - `Location ()` builds this from the fabric URL.
-- [RESOURCE](RESOURCE.md) - the reference `FABRIC::Location` is derived from.
+- [HOST](HOST.md#snapshot-views) - `Location ()` builds this from the fabric URL.
+- [RESOURCE](RESOURCE.md) - the reference `HOST::Location` is derived from.

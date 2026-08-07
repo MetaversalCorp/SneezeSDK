@@ -1,8 +1,8 @@
 # RESOURCE
 
-The launching resource's identity - the map object of the node that attached this fabric. Reached through [`FABRIC::Resource`](FABRIC.md#snapshot-views), a read-only view over the [Open snapshot](SNAPSHOT.md).
+The launching resource's identity - the map object of the node that attached this fabric. Reached through [`HOST::Resource`](HOST.md#snapshot-views), a read-only view over the [Open snapshot](SNAPSHOT.md).
 
-For the primary fabric there is no attaching node, so `Id ()` is `0` and `Name ()` is empty. The fabric's own URL is not on `RESOURCE`; read it from [`FABRIC::Location`](LOCATION.md).
+For the primary fabric there is no attaching node, so `Id ()` is `0` and `Name ()` is empty. The fabric's own URL is not on `RESOURCE`; read it from [`HOST::Location`](LOCATION.md).
 
 ## Methods
 
@@ -26,22 +26,22 @@ pub fn Name (&self) -> &str
 ## Usage
 
 ```rust
-fn Open (pFabric: FABRIC)
+fn Open (pHost: HOST)
 {
-   let pResource = pFabric.Resource ();
+   let pResource = pHost.Resource ();
 
    if pResource.Id () != 0
    {
-      pFabric.Console ().Log (pResource.Name ());
+      pHost.Console ().Log (pResource.Name ());
    }
 
    // the fabric's own URL lives on LOCATION, not RESOURCE
-   pFabric.Console ().Log (pFabric.Location ().Href ());
+   pHost.Console ().Log (pHost.Location ().Href ());
 }
 ```
 
 ## See also
 
-- [FABRIC](FABRIC.md#snapshot-views) - how to obtain the view.
+- [HOST](HOST.md#snapshot-views) - how to obtain the view.
 - [LOCATION](LOCATION.md) - the fabric URL, split into parts.
 - [SNEEZE_ABI_MAPOBJECT](MAPOBJECT.md) - the builder whose resource fields this mirrors.

@@ -1,6 +1,6 @@
 # AGENT
 
-Host and engine identity - a `navigator` analog. Reached through [`FABRIC::Agent`](FABRIC.md#snapshot-views), a read-only view over the [Open snapshot](SNAPSHOT.md). It tells a module what browser/engine and platform it is running under, so it can adapt.
+Host and engine identity - a `navigator` analog. Reached through [`HOST::Agent`](HOST.md#snapshot-views), a read-only view over the [Open snapshot](SNAPSHOT.md). It tells a module what browser/engine and platform it is running under, so it can adapt.
 
 ## Methods
 
@@ -18,14 +18,14 @@ Host and engine identity - a `navigator` analog. Reached through [`FABRIC::Agent
 ## Usage
 
 ```rust
-fn Open (pFabric: FABRIC)
+fn Open (pHost: HOST)
 {
-   let pAgent = pFabric.Agent ();
+   let pAgent = pHost.Agent ();
 
-   pFabric.Console ().Log (&format! ("{} {}", pAgent.Engine_Name (), pAgent.Engine_Version ()));
+   pHost.Console ().Log (&format! ("{} {}", pAgent.Engine_Name (), pAgent.Engine_Version ()));
 }
 ```
 
 ## See also
 
-- [FABRIC](FABRIC.md#snapshot-views) - how to obtain the view.
+- [HOST](HOST.md#snapshot-views) - how to obtain the view.

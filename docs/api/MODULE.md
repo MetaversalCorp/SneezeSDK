@@ -1,6 +1,6 @@
 # MODULE
 
-A declared WASM module from the fabric manifest. Reached through [`FABRIC::Modules`](FABRIC.md#snapshot-views), which returns a `&[MODULE]` read from the [Open snapshot](SNAPSHOT.md). It mirrors the engine's `MSF::MODULE`.
+A declared WASM module from the fabric manifest. Reached through [`HOST::Modules`](HOST.md#snapshot-views), which returns a `&[MODULE]` read from the [Open snapshot](SNAPSHOT.md). It mirrors the engine's `MSF::MODULE`.
 
 This is a manifest *record* describing a module the fabric loads (its URL and integrity hash). It is not the lifecycle trait your code implements - that is [`INSTANCE`](INSTANCE.md). The two were deliberately given different names to avoid a collision.
 
@@ -14,11 +14,11 @@ This is a manifest *record* describing a module the fabric loads (its URL and in
 ## Usage
 
 ```rust
-fn Open (pFabric: FABRIC)
+fn Open (pHost: HOST)
 {
-   let pConsole = pFabric.Console ();
+   let pConsole = pHost.Console ();
 
-   for pModule in pFabric.Modules ()
+   for pModule in pHost.Modules ()
    {
       pConsole.Log (pModule.Url ());
 
@@ -32,6 +32,6 @@ fn Open (pFabric: FABRIC)
 
 ## See also
 
-- [FABRIC](FABRIC.md#snapshot-views) - how to obtain the list.
-- [SERVICE](SERVICE.md) - services reference these modules by name.
+- [HOST](HOST.md#snapshot-views) - how to obtain the list.
+- [SERVICES](SERVICES.md) - the fabric's declared services, served on demand by name.
 - [INSTANCE](INSTANCE.md) - the lifecycle trait (not to be confused with this manifest record).

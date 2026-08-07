@@ -1,6 +1,6 @@
 # PERFORMANCE
 
-The monotonic high-resolution clock, reached through [`FABRIC::Performance`](FABRIC.md#performance). It answers "how much time has elapsed?" - never "what time is it?". It is the SDK's analog of the browser `performance` object (`performance.now` / `performance.timeOrigin`).
+The monotonic high-resolution clock, reached through [`HOST::Performance`](HOST.md#performance). It answers "how much time has elapsed?" - never "what time is it?". It is the SDK's analog of the browser `performance` object (`performance.now` / `performance.timeOrigin`).
 
 Use `PERFORMANCE` to measure durations. Unlike [`CHRONO`](CHRONO.md), it never goes backward and is not affected by clock adjustments, so it is the right tool for timing work, frame pacing, or profiling. It is a zero-cost view over the fabric handle; the clock's origin is anchored per fabric when the fabric loads.
 
@@ -18,10 +18,10 @@ pub fn Now (&self) -> i64
 - **Example:**
 
 ```rust
-let nStart = pFabric.Performance ().Now ();
+let nStart = pHost.Performance ().Now ();
 // ... do work ...
-let nElapsedMs = (pFabric.Performance ().Now () - nStart) / 10000;
-pFabric.Console ().Log (&format! ("took {} ms", nElapsedMs));
+let nElapsedMs = (pHost.Performance ().Now () - nStart) / 10000;
+pHost.Console ().Log (&format! ("took {} ms", nElapsedMs));
 ```
 
 - **See also:** [`Origin`](#origin), [`CHRONO::Time`](CHRONO.md#time).
@@ -38,8 +38,8 @@ pub fn Origin (&self) -> MOMENT
 - **Example:**
 
 ```rust
-let mOrigin = pFabric.Performance ().Origin ();
-pFabric.Console ().Log (&format! ("clock started at {}", mOrigin.String_Iso ()));
+let mOrigin = pHost.Performance ().Origin ();
+pHost.Console ().Log (&format! ("clock started at {}", mOrigin.String_Iso ()));
 ```
 
 - **See also:** [`Now`](#now), [`MOMENT`](MOMENT.md).

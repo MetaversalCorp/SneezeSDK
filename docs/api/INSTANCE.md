@@ -34,44 +34,44 @@ impl INSTANCE for MY_MODULE
 ### Open
 
 ```rust
-fn Open (pFabric: FABRIC) {}
+fn Open (pHost: &HOST) {}
 ```
 
 - **Parameters:**
-  - `pFabric` - the [`FABRIC`](FABRIC.md) root handle for the fabric that just opened. Every subsystem *and* the immutable configuration is reached through it.
+  - `pHost` - the [`HOST`](HOST.md) root handle for the fabric that just opened. Every subsystem *and* the immutable configuration is reached through it.
 - **Returns:** nothing.
-- **Description:** The main entry point. Called once per fabric that loads your module. This is where you read configuration, build the scene, and store or restore state. Because one instance can serve several fabrics at once, key any per-fabric state you retain by `pFabric.Index ()`. The engine pushes an immutable [Open snapshot](SNAPSHOT.md) at this point; the SDK parses it privately, so you read it through the fabric's typed views (`pFabric.Resource ()`, `pFabric.Container ()`, ...) rather than touching any raw blob.
+- **Description:** The main entry point. Called once per fabric that loads your module. This is where you read configuration, build the scene, and store or restore state. Because one instance can serve several fabrics at once, key any per-fabric state you retain by `pHost.Index ()`. The engine pushes an immutable [Open snapshot](SNAPSHOT.md) at this point; the SDK parses it privately, so you read it through the fabric's typed views (`pHost.Resource ()`, `pHost.Container ()`, ...) rather than touching any raw blob.
 - **Example:**
 
 ```rust
-fn Open (pFabric: FABRIC)
+fn Open (pHost: &HOST)
 {
-   pFabric.Console ().Log (pFabric.Container ().Name ());
+   pHost.Console ().Log (pHost.Container ().Name ());
 
    let mut pRoot = SNEEZE_ABI_MAPOBJECT::Physical ();
    pRoot.Name ("Stool").Reference ("assets/Stool.glb");
-   pFabric.Scene ().Node_Root (&pRoot);
+   pHost.Fabric ().Node_Root (&pRoot);
 }
 ```
 
-- **See also:** [`Close`](#close) (its mirror), [`FABRIC`](FABRIC.md), [the Open snapshot](SNAPSHOT.md).
+- **See also:** [`Close`](#close) (its mirror), [`HOST`](HOST.md), [the Open snapshot](SNAPSHOT.md).
 
 ### Close
 
 ```rust
-fn Close (pFabric: FABRIC) {}
+fn Close (pHost: &HOST) {}
 ```
 
 - **Parameters:**
-  - `pFabric` - the [`FABRIC`](FABRIC.md) handle for the fabric being closed (the same index you saw in `Open`).
+  - `pHost` - the [`HOST`](HOST.md) handle for the fabric being closed (the same index you saw in `Open`).
 - **Returns:** nothing.
-- **Description:** Called when a fabric unloads. Release any per-fabric state you keyed by `pFabric.Index ()`. The engine tears down the fabric's nodes itself; you only clean up your own guest-side bookkeeping.
+- **Description:** Called when a fabric unloads. Release any per-fabric state you keyed by `pHost.Index ()`. The engine tears down the fabric's nodes itself; you only clean up your own guest-side bookkeeping.
 - **Example:**
 
 ```rust
-fn Close (pFabric: FABRIC)
+fn Close (pHost: &HOST)
 {
-   // drop any state keyed by pFabric.Index ()
+   // drop any state keyed by pHost.Index ()
 }
 ```
 
@@ -100,11 +100,11 @@ fn Shutdown ()
 ### Timer
 
 ```rust
-fn Timer (pFabric: FABRIC, twTimerIx: u64, qwParam: u64) {}
+fn Timer (pHost: &HOST, twTimerIx: u64, qwParam: u64) {}
 ```
 
 - **Parameters:**
-  - `pFabric` - the [`FABRIC`](FABRIC.md) that armed the timer.
+  - `pHost` - the [`HOST`](HOST.md) that armed the timer.
   - `twTimerIx` - the id returned by [`TIMER::Set`](TIMER.md#set) or [`TIMER::Interval`](TIMER.md#interval) when the timer was armed.
   - `qwParam` - the opaque cookie you passed when arming; the engine echoes it back so one handler can tell its timers apart.
 - **Returns:** nothing.
@@ -112,9 +112,9 @@ fn Timer (pFabric: FABRIC, twTimerIx: u64, qwParam: u64) {}
 - **Example:**
 
 ```rust
-fn Timer (pFabric: FABRIC, twTimerIx: u64, qwParam: u64)
+fn Timer (pHost: &HOST, twTimerIx: u64, qwParam: u64)
 {
-   pFabric.Console ().Log (&format! ("timer {} fired (param {})", twTimerIx, qwParam));
+   pHost.Console ().Log (&format! ("timer {} fired (param {})", twTimerIx, qwParam));
 }
 ```
 
@@ -138,9 +138,9 @@ struct MY_MODULE;
 
 impl INSTANCE for MY_MODULE
 {
-   fn Open (pFabric: FABRIC)
+   fn Open (pHost: &HOST)
    {
-      pFabric.Console ().Log ("loaded");
+      pHost.Console ().Log ("loaded");
    }
 }
 
