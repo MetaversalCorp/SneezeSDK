@@ -15,8 +15,8 @@ cd SneezeSDK
 
 The repository contains:
 - `sdk/include/sneeze_abi.h` — the canonical ABI header (all languages share it).
-- `Rust/` — the Rust SDK crate (git submodule → [SneezeSDK_Rust](https://github.com/MetaversalCorp/SneezeSDK_Rust)).
-- The C SDK sources (in `SneezeSDK_C`, referenced as a sibling or submodule).
+- `Rust/` — submodule placeholder for [SneezeSDK_Rust](https://github.com/MetaversalCorp/SneezeSDK_Rust) (not checked out by default; the `sneeze` dependency is pulled directly from GitHub by Cargo — no manual submodule init needed).
+- `C/` — submodule placeholder for [SneezeSDK_C](https://github.com/MetaversalCorp/SneezeSDK_C) (the C SDK sources).
 
 ---
 
