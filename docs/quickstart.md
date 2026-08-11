@@ -2,6 +2,8 @@
 
 This guide takes you from nothing to a running `.wasm` module. Pick your language — **C** (built with Emscripten) or **Rust** — and follow the matching track.
 
+> **Platform note:** The shell commands in this guide are written for **Linux and macOS**. Windows users: see the [Windows quickstart](quickstart-windows.md) for equivalent commands.
+
 ---
 
 ## Step 1 — Clone the repository
@@ -13,7 +15,7 @@ cd SneezeSDK
 
 The repository contains:
 - `sdk/include/sneeze_abi.h` — the canonical ABI header (all languages share it).
-- `sdk/rust/` — the Rust SDK crate.
+- `Rust/` — the Rust SDK crate (git submodule → [SneezeSDK_Rust](https://github.com/MetaversalCorp/SneezeSDK_Rust)).
 - The C SDK sources (in `SneezeSDK_C`, referenced as a sibling or submodule).
 
 ---
@@ -134,7 +136,7 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-sneeze = { path = "../../SneezeSDK/sdk/rust" }   # adjust path as needed
+sneeze = { git = "https://github.com/MetaversalCorp/SneezeSDK_Rust.git" }
 
 [profile.release]
 opt-level = "s"
