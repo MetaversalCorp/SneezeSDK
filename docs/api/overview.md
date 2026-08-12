@@ -77,9 +77,15 @@ After creation you mutate a live node through its `NODE` handle (`Position`, `Sc
 
 `FABRIC::Node_Map_Data (sPath)` is a shortcut: it asks the engine to build an entire node subtree directly from a path in the fabric's `Data` block, without you constructing each map object. Alternatively, [`FABRIC::Node_Map_Service`](FABRIC.md#node_map_service) hands the whole fabric to a browser-managed map service instead of building nodes by hand.
 
-## What is not here yet
+## Unimplemented subsystems
 
-The ABI reserves numbers for subsystems and methods that are declared but not yet implemented in the engine: `NETWORK` (fetch), `VIEWPORT` (camera get/set), the `SCENE` global-lighting and background methods, and `NODE::Rotation`. These appear in `sneeze_abi.h` marked "not implemented yet" and have no SDK wrapper - do not rely on them until they land.
+The ABI reserves numbers for subsystems and methods that are declared but not yet implemented in the engine: 
+1. `NETWORK` (fetch)
+2. `VIEWPORT` (camera get/set)
+3. `SCENE` global-lighting and background methods
+4. `NODE::Rotation`
+   
+These appear in `sneeze_abi.h` marked "not implemented yet" and have no SDK wrapper - do not rely on them until they land.
 
 Event delivery through `Notify` is live: it carries [`TIMER`](TIMER.md) fires today, dispatched to [`INSTANCE::Timer`](INSTANCE.md#timer). Other event kinds (node events, for example) are still reserved; a `Notify` packet a module has no hook for is simply ignored, so old modules stay forward-compatible as new event kinds land.
 
