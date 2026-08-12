@@ -9,14 +9,30 @@ This guide takes you from nothing to a running `.wasm` module. Pick your languag
 ## Step 1 — Clone the repository
 
 ```sh
-git clone https://github.com/MetaversalCorp/SneezeSDK.git
+git clone --recurse-submodules https://github.com/MetaversalCorp/SneezeSDK.git
 cd SneezeSDK
 ```
 
-The repository contains:
-- `sdk/include/sneeze_abi.h` — the canonical ABI header (all languages share it).
-- `Rust/` — submodule placeholder for [SneezeSDK_Rust](https://github.com/MetaversalCorp/SneezeSDK_Rust) (not checked out by default; the `sneeze` dependency is pulled directly from GitHub by Cargo [...]
-- `C/` — submodule placeholder for [SneezeSDK_C](https://github.com/MetaversalCorp/SneezeSDK_C) (the C SDK sources).
+> If you don't have Git, install it from your package manager (e.g. `sudo apt install git` or `brew install git`).
+>
+> **Already cloned without `--recurse-submodules`?** Run this from inside the repo to populate the submodules now:
+> ```sh
+> git submodule update --init --recursive
+> ```
+
+After cloning, your directory layout will look like this:
+
+```
+~/dev/
+└── SneezeSDK/                  ← you are here after `cd SneezeSDK`
+    ├── sdk/
+    │   └── include/
+    │       └── sneeze_abi.h    ← canonical ABI header
+    ├── Rust/                   ← SneezeSDK_Rust submodule (used by Track A)
+    └── C/                      ← SneezeSDK_C submodule (used by Track B)
+```
+
+Your own module projects will be created **inside** `SneezeSDK/` in the steps below, so the relative paths to the submodules stay simple.
 
 ---
 
@@ -45,9 +61,25 @@ rustc --version
 
 ### Step 3A — Create your project
 
+From inside `SneezeSDK/`, create your module as a sibling of the `Rust/` submodule:
+
 ```sh
+# pwd: ~/dev/SneezeSDK
 cargo new --lib my_module
 cd my_module
+```
+
+Your layout is now:
+
+```
+SneezeSDK/
+├── Rust/           ← SneezeSDK_Rust (local library source)
+├── C/
+├── sdk/
+└── my_module/      ← your new project (you are here)
+    ├── Cargo.toml
+    └── src/
+        └── lib.rs
 ```
 
 Edit `Cargo.toml`:
@@ -62,12 +94,14 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-sneeze = { git = "https://github.com/MetaversalCorp/SneezeSDK_Rust.git" }
+sneeze = { path = "../Rust" }
 
 [profile.release]
 opt-level = "s"
 lto = true
 ```
+
+> `path = "../Rust"` points at the `SneezeSDK/Rust/` submodule you cloned in Step 1 — no internet access needed at build time.
 
 Replace `src/lib.rs` with:
 
@@ -96,6 +130,7 @@ The `instance!` macro wires up all seven ABI exports for you.
 ### Step 4A — Build
 
 ```sh
+# pwd: ~/dev/SneezeSDK/my_module
 cargo build --target wasm32-unknown-unknown --release
 ```
 
@@ -107,14 +142,26 @@ Your module is at `target/wasm32-unknown-unknown/release/my_module.wasm`.
 
 ### Step 2B — Install Emscripten
 
-Follow the [emsdk Getting Started guide](https://emscripten.org/docs/getting_started/downloads.html):
+Clone and set up emsdk **alongside** (not inside) `SneezeSDK/`:
 
 ```sh
+# pwd: ~/dev  (the same parent directory that contains SneezeSDK/)
 git clone https://github.com/emscripten-core/emsdk.git
 cd emsdk
 ./emsdk install latest
 ./emsdk activate latest
-source ./emsdk_env.sh   # add emcc to your PATH (run this every new shell)
+source ./emsdk_env.sh   # adds emcc to your PATH — run this every new shell
+```
+
+Your layout is now:
+
+```
+~/dev/
+├── SneezeSDK/
+│   ├── sdk/include/
+│   ├── Rust/
+│   └── C/              ← SneezeSDK_C (SDK source files are here)
+└── emsdk/              ← Emscripten toolchain
 ```
 
 Verify:
@@ -123,9 +170,17 @@ Verify:
 emcc --version
 ```
 
+> You must `source ./emsdk_env.sh` at the start of every new shell session before using `emcc`.
+
 ### Step 3B — Write your module
 
-Create a file `my_module.c`:
+Create your `.c` file **inside `SneezeSDK/C/`**, alongside the SDK source files that `emcc` will compile:
+
+```sh
+# pwd: ~/dev/SneezeSDK/C
+```
+
+Create `my_module.c` here:
 
 ```c
 #include "sneeze.h"
@@ -149,23 +204,27 @@ You only define the lifecycle hooks you need. The SDK supplies do-nothing defaul
 
 ### Step 4B — Build
 
-From the root of the `SneezeSDK_C` directory (with `emsdk_env.sh` already sourced):
+Run from inside `SneezeSDK/C/` (with `emsdk_env.sh` already sourced):
 
 ```sh
-make SNEEZE_ABI_INCLUDE=/path/to/SneezeSDK/sdk/include
+# pwd: ~/dev/SneezeSDK/C
+make SNEEZE_ABI_INCLUDE=../sdk/include
 ```
 
 Or invoke `emcc` directly:
 
 ```sh
+# pwd: ~/dev/SneezeSDK/C
 emcc -std=c11 -Os -Wno-address-of-packed-member \
-     -Iinclude -Isrc -I/path/to/SneezeSDK/sdk/include \
+     -Iinclude -Isrc -I../sdk/include \
      -sSTANDALONE_WASM -sWASM_BIGINT --no-entry \
      -sERROR_ON_UNDEFINED_SYMBOLS=0 -sMALLOC=emmalloc \
      src/sneeze_ffi.c src/sneeze_json.c src/sneeze_snapshot.c \
      src/sneeze_mapobject.c src/sneeze_objects.c src/sneeze_instance.c \
      my_module.c -o my_module.wasm
 ```
+
+> `-I../sdk/include` resolves to `SneezeSDK/sdk/include/` — the ABI header shared by all languages.
 
 You should get a `my_module.wasm` file. Confirm it has the right shape:
 

@@ -7,7 +7,7 @@ This guide takes you from nothing to a running `.wasm` module on Windows. Pick y
 ### Which terminal to use
 
 - **Track A (Rust):** Use **PowerShell**. `cargo`, `rustup`, and `winget` all work natively in PowerShell with no extra setup.
-- **Track B (C/Emscripten):** Use **PowerShell** (Windows Terminal with the PowerShell tab). The Emscripten environment script is a `.bat` file that works in both `cmd` and PowerShell; PowerShell is recommended.
+- **Track B (C/Emscripten):** Use **PowerShell** (Windows Terminal with the PowerShell tab). The Emscripten environment script is a `.bat` file that works in both `cmd` and PowerShell; PowerShell is recommended for consistency.
 
 Open Windows Terminal and select a **PowerShell** tab before starting either track.
 
@@ -16,16 +16,30 @@ Open Windows Terminal and select a **PowerShell** tab before starting either tra
 ## Step 1 — Clone the repository
 
 ```powershell
-git clone https://github.com/MetaversalCorp/SneezeSDK.git
+git clone --recurse-submodules https://github.com/MetaversalCorp/SneezeSDK.git
 cd SneezeSDK
 ```
 
 > If you don't have Git, install it from [git-scm.com](https://git-scm.com/download/win) or run `winget install Git.Git`.
+>
+> **Already cloned without `--recurse-submodules`?** Run this from inside the repo to populate the submodules now:
+> ```powershell
+> git submodule update --init --recursive
+> ```
 
-The repository contains:
-- `sdk/include/sneeze_abi.h` — the canonical ABI header (all languages share it).
-- `Rust/` — submodule placeholder for [SneezeSDK_Rust](https://github.com/MetaversalCorp/SneezeSDK_Rust) (not checked out by default; the `sneeze` dependency is pulled directly from GitHub by Cargo [...]
-- `C/` — submodule placeholder for [SneezeSDK_C](https://github.com/MetaversalCorp/SneezeSDK_C) (the C SDK sources).
+After cloning, your directory layout will look like this:
+
+```
+C:\dev\
+└── SneezeSDK\                  ← you are here after `cd SneezeSDK`
+    ├── sdk\
+    │   └── include\
+    │       └── sneeze_abi.h    ← canonical ABI header
+    ├── Rust\                   ← SneezeSDK_Rust submodule (used by Track A)
+    └── C\                      ← SneezeSDK_C submodule (used by Track B)
+```
+
+Your own module projects will be created **inside** `SneezeSDK\` in the steps below, so the relative paths to the submodules stay simple.
 
 ---
 
@@ -56,9 +70,25 @@ rustc --version
 
 ### Step 3A — Create your project
 
+From inside `SneezeSDK\`, create your module as a sibling of the `Rust\` submodule:
+
 ```powershell
+# pwd: C:\dev\SneezeSDK
 cargo new --lib my_module
 cd my_module
+```
+
+Your layout is now:
+
+```
+SneezeSDK\
+├── Rust\           ← SneezeSDK_Rust (local library source)
+├── C\
+├── sdk\
+└── my_module\      ← your new project (you are here)
+    ├── Cargo.toml
+    └── src\
+        └── lib.rs
 ```
 
 Edit `Cargo.toml`:
@@ -73,12 +103,14 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-sneeze = { git = "https://github.com/MetaversalCorp/SneezeSDK_Rust.git" }
+sneeze = { path = "../Rust" }
 
 [profile.release]
 opt-level = "s"
 lto = true
 ```
+
+> `path = "../Rust"` points at the `SneezeSDK\Rust\` submodule you cloned in Step 1 — no internet access needed at build time.
 
 Replace `src\lib.rs` with:
 
@@ -107,6 +139,7 @@ The `instance!` macro wires up all seven ABI exports for you.
 ### Step 4A — Build
 
 ```powershell
+# pwd: C:\dev\SneezeSDK\my_module
 cargo build --target wasm32-unknown-unknown --release
 ```
 
@@ -118,14 +151,26 @@ Your module is at `target\wasm32-unknown-unknown\release\my_module.wasm`.
 
 ### Step 2B — Install Emscripten
 
-Follow the [emsdk Getting Started guide](https://emscripten.org/docs/getting_started/downloads.html). In PowerShell:
+Clone and set up emsdk **alongside** (not inside) `SneezeSDK\`:
 
 ```powershell
+# pwd: C:\dev  (the same parent directory that contains SneezeSDK\)
 git clone https://github.com/emscripten-core/emsdk.git
 cd emsdk
 .\emsdk install latest
 .\emsdk activate latest
 .\emsdk_env.bat     # adds emcc to your PATH for this session — run this every new terminal
+```
+
+Your layout is now:
+
+```
+C:\dev\
+├── SneezeSDK\
+│   ├── sdk\include\
+│   ├── Rust\
+│   └── C\              ← SneezeSDK_C (SDK source files are here)
+└── emsdk\              ← Emscripten toolchain
 ```
 
 Verify:
@@ -138,7 +183,13 @@ emcc --version
 
 ### Step 3B — Write your module
 
-Create a file `my_module.c`:
+Create your `.c` file **inside `SneezeSDK\C\`**, alongside the SDK source files that `emcc` will compile:
+
+```powershell
+# pwd: C:\dev\SneezeSDK\C
+```
+
+Create `my_module.c` here:
 
 ```c
 #include "sneeze.h"
@@ -162,11 +213,12 @@ You only define the lifecycle hooks you need. The SDK supplies do-nothing defaul
 
 ### Step 4B — Build
 
-`make` is not available by default on Windows, so invoke `emcc` directly. From the root of the `C\` submodule directory (with `emsdk_env.bat` already run), use PowerShell's backtick (`` ` ``) for line continuation:
+`make` is not available by default on Windows, so invoke `emcc` directly. Run from inside `SneezeSDK\C\` (with `emsdk_env.bat` already run), using PowerShell's backtick (`` ` ``) for line continuation:
 
 ```powershell
+# pwd: C:\dev\SneezeSDK\C
 emcc -std=c11 -Os -Wno-address-of-packed-member `
-     -Iinclude -Isrc -IC:\path\to\SneezeSDK\sdk\include `
+     -Iinclude -Isrc -I..\sdk\include `
      -sSTANDALONE_WASM -sWASM_BIGINT --no-entry `
      -sERROR_ON_UNDEFINED_SYMBOLS=0 -sMALLOC=emmalloc `
      src/sneeze_ffi.c src/sneeze_json.c src/sneeze_snapshot.c `
@@ -174,7 +226,7 @@ emcc -std=c11 -Os -Wno-address-of-packed-member `
      my_module.c -o my_module.wasm
 ```
 
-Replace `C:\path\to\SneezeSDK` with the actual path where you cloned the repository.
+> `-I..\sdk\include` resolves to `SneezeSDK\sdk\include\` — the ABI header shared by all languages.
 
 You should get a `my_module.wasm` file. Confirm it has the right shape:
 
