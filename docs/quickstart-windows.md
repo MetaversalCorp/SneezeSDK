@@ -1,13 +1,13 @@
 # Quickstart (Windows): Your First Sneeze WASM Module
 
-This guide takes you from nothing to a running `.wasm` module on Windows. Pick your language — **C** (built with Emscripten) or **Rust** — and follow the matching track.
+This guide takes you from nothing to a running `.wasm` module on Windows. Pick your language — **Rust** or **C** (built with Emscripten) — and follow the matching track.
 
 > **Platform note:** This guide is for **Windows**. Linux and macOS users: see the [standard quickstart](quickstart.md).
 
 ### Which terminal to use
 
-- **Track A (C/Emscripten):** Use **PowerShell** (Windows Terminal with the PowerShell tab). The Emscripten environment script is a `.bat` file that works in both `cmd` and PowerShell; PowerShell is recommended for the rest of the workflow.
-- **Track B (Rust):** Use **PowerShell**. `cargo`, `rustup`, and `winget` all work natively in PowerShell with no extra setup.
+- **Track A (Rust):** Use **PowerShell**. `cargo`, `rustup`, and `winget` all work natively in PowerShell with no extra setup.
+- **Track B (C/Emscripten):** Use **PowerShell** (Windows Terminal with the PowerShell tab). The Emscripten environment script is a `.bat` file that works in both `cmd` and PowerShell; PowerShell is recommended.
 
 Open Windows Terminal and select a **PowerShell** tab before starting either track.
 
@@ -24,86 +24,14 @@ cd SneezeSDK
 
 The repository contains:
 - `sdk/include/sneeze_abi.h` — the canonical ABI header (all languages share it).
-- `Rust/` — submodule placeholder for [SneezeSDK_Rust](https://github.com/MetaversalCorp/SneezeSDK_Rust) (not checked out by default; the `sneeze` dependency is pulled directly from GitHub by Cargo — no manual submodule init needed).
+- `Rust/` — submodule placeholder for [SneezeSDK_Rust](https://github.com/MetaversalCorp/SneezeSDK_Rust) (not checked out by default; the `sneeze` dependency is pulled directly from GitHub by Cargo [...]
 - `C/` — submodule placeholder for [SneezeSDK_C](https://github.com/MetaversalCorp/SneezeSDK_C) (the C SDK sources).
 
 ---
 
-## Track A — C with Emscripten
+## Track A — Rust
 
-### Step 2A — Install Emscripten
-
-Follow the [emsdk Getting Started guide](https://emscripten.org/docs/getting_started/downloads.html). In PowerShell:
-
-```powershell
-git clone https://github.com/emscripten-core/emsdk.git
-cd emsdk
-.\emsdk install latest
-.\emsdk activate latest
-.\emsdk_env.bat     # adds emcc to your PATH for this session — run this every new terminal
-```
-
-Verify:
-
-```powershell
-emcc --version
-```
-
-> You must run `.\emsdk_env.bat` at the start of every new PowerShell session before using `emcc`.
-
-### Step 3A — Write your module
-
-Create a file `my_module.c`:
-
-```c
-#include "sneeze.h"
-
-void Instance_Open (HFABRIC twFabricIx)
-{
-    Console_Log (twFabricIx, "hello from wasm");
-
-    HMAPOBJECT pRoot = MapObject_Physical ();
-    MapObject_Name      (pRoot, "Stool");
-    MapObject_Reference (pRoot, "assets/Stool.glb");
-
-    HNODE qwNode = Scene_Node_Root (twFabricIx, pRoot);
-    Node_Scale (qwNode, 2.0);
-
-    MapObject_Free (pRoot);
-}
-```
-
-You only define the lifecycle hooks you need. The SDK supplies do-nothing defaults for `Instance_Init`, `Instance_Close`, and `Instance_Shutdown`, so you can omit them here.
-
-### Step 4A — Build
-
-`make` is not available by default on Windows, so invoke `emcc` directly. From the root of the `C\` submodule directory (with `emsdk_env.bat` already run), use PowerShell's backtick (`` ` ``) for line continuation:
-
-```powershell
-emcc -std=c11 -Os -Wno-address-of-packed-member `
-     -Iinclude -Isrc -IC:\path\to\SneezeSDK\sdk\include `
-     -sSTANDALONE_WASM -sWASM_BIGINT --no-entry `
-     -sERROR_ON_UNDEFINED_SYMBOLS=0 -sMALLOC=emmalloc `
-     src/sneeze_ffi.c src/sneeze_json.c src/sneeze_snapshot.c `
-     src/sneeze_mapobject.c src/sneeze_objects.c src/sneeze_instance.c `
-     my_module.c -o my_module.wasm
-```
-
-Replace `C:\path\to\SneezeSDK` with the actual path where you cloned the repository.
-
-You should get a `my_module.wasm` file. Confirm it has the right shape:
-
-```powershell
-wasm-objdump -x my_module.wasm
-```
-
-It should import only `Sneeze.Call` and export the seven ABI symbols (`Alloc`, `Free`, `Notify`, `Init`, `Open`, `Close`, `Shutdown`).
-
----
-
-## Track B — Rust
-
-### Step 2B — Install Rust and the WASM target
+### Step 2A — Install Rust and the WASM target
 
 Install Rust using `winget` in PowerShell:
 
@@ -126,7 +54,7 @@ rustc --version
 
 > Alternatively, download and run the `rustup-init.exe` installer directly from [rustup.rs](https://rustup.rs).
 
-### Step 3B — Create your project
+### Step 3A — Create your project
 
 ```powershell
 cargo new --lib my_module
@@ -176,13 +104,85 @@ sneeze::instance! (MY_MODULE);
 
 The `instance!` macro wires up all seven ABI exports for you.
 
-### Step 4B — Build
+### Step 4A — Build
 
 ```powershell
 cargo build --target wasm32-unknown-unknown --release
 ```
 
 Your module is at `target\wasm32-unknown-unknown\release\my_module.wasm`.
+
+---
+
+## Track B — C with Emscripten
+
+### Step 2B — Install Emscripten
+
+Follow the [emsdk Getting Started guide](https://emscripten.org/docs/getting_started/downloads.html). In PowerShell:
+
+```powershell
+git clone https://github.com/emscripten-core/emsdk.git
+cd emsdk
+.\emsdk install latest
+.\emsdk activate latest
+.\emsdk_env.bat     # adds emcc to your PATH for this session — run this every new terminal
+```
+
+Verify:
+
+```powershell
+emcc --version
+```
+
+> You must run `.\emsdk_env.bat` at the start of every new PowerShell session before using `emcc`.
+
+### Step 3B — Write your module
+
+Create a file `my_module.c`:
+
+```c
+#include "sneeze.h"
+
+void Instance_Open (HFABRIC twFabricIx)
+{
+    Console_Log (twFabricIx, "hello from wasm");
+
+    HMAPOBJECT pRoot = MapObject_Physical ();
+    MapObject_Name      (pRoot, "Stool");
+    MapObject_Reference (pRoot, "assets/Stool.glb");
+
+    HNODE qwNode = Scene_Node_Root (twFabricIx, pRoot);
+    Node_Scale (qwNode, 2.0);
+
+    MapObject_Free (pRoot);
+}
+```
+
+You only define the lifecycle hooks you need. The SDK supplies do-nothing defaults for `Instance_Init`, `Instance_Close`, and `Instance_Shutdown`, so you can omit them here.
+
+### Step 4B — Build
+
+`make` is not available by default on Windows, so invoke `emcc` directly. From the root of the `C\` submodule directory (with `emsdk_env.bat` already run), use PowerShell's backtick (`` ` ``) for line continuation:
+
+```powershell
+emcc -std=c11 -Os -Wno-address-of-packed-member `
+     -Iinclude -Isrc -IC:\path\to\SneezeSDK\sdk\include `
+     -sSTANDALONE_WASM -sWASM_BIGINT --no-entry `
+     -sERROR_ON_UNDEFINED_SYMBOLS=0 -sMALLOC=emmalloc `
+     src/sneeze_ffi.c src/sneeze_json.c src/sneeze_snapshot.c `
+     src/sneeze_mapobject.c src/sneeze_objects.c src/sneeze_instance.c `
+     my_module.c -o my_module.wasm
+```
+
+Replace `C:\path\to\SneezeSDK` with the actual path where you cloned the repository.
+
+You should get a `my_module.wasm` file. Confirm it has the right shape:
+
+```powershell
+wasm-objdump -x my_module.wasm
+```
+
+It should import only `Sneeze.Call` and export the seven ABI symbols (`Alloc`, `Free`, `Notify`, `Init`, `Open`, `Close`, `Shutdown`).
 
 ---
 
