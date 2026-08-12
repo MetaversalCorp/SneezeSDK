@@ -134,6 +134,8 @@ impl INSTANCE for MY_MODULE
 sneeze::instance! (MY_MODULE);
 ```
 
+> `lib.rs` is Cargo's default entry point for a library crate — the `--lib` flag you passed to `cargo new` is what makes this a library rather than an executable.
+
 The `instance!` macro wires up all seven ABI exports for you.
 
 ### Step 4A — Build
