@@ -25,7 +25,8 @@ shared documentation and the canonical ABI header live here at the root.
 The reference SDK and the canonical shape every other binding mirrors. You
 implement the `INSTANCE` trait (`Init`, `Open`, `Close`, `Shutdown`) and wire it
 up with the `instance!` macro, then reach every subsystem through the `FABRIC`
-root. Distributed as a Cargo crate and compiled to a `wasm32` reactor module.
+root. Distributed as a Cargo crate and compiled to a `wasm32` reactor module. See [RUST/README.md](RUST/README.md) for building the
+`csstool` example.
 
 ### C
 
@@ -33,14 +34,15 @@ The C binding, built with Emscripten. C has no methods, so the SDK is flat:
 every subsystem method becomes a free function whose first argument is the handle
 Rust would have called the method on (for example `pFabric.Console ().Log (s)`
 becomes `Console_Log (twFabricIx, s)`). It layers directly on the canonical ABI
-header and mirrors the Rust SDK function for function. See
-[The C SDK](docs/c-sdk.md).
+header and mirrors the Rust SDK function for function. See [C/README.md](C/README.md) for building the
+`cstool` example.
 
 ### C++
 
 The C++ binding over the same frozen ABI, a sibling to the C and Rust SDKs. Built
 with Emscripten and following the shared object model and `Open` lifecycle
-documented for every language.
+documented for every language. See [CPP/README.md](CPP/README.md) for building the
+`cppstool` example.
 
 ### C#
 
