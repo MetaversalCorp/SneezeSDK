@@ -25,7 +25,7 @@ shared documentation and the canonical ABI header live here at the root.
 The reference SDK and the canonical shape every other binding mirrors. You
 implement the `INSTANCE` trait (`Init`, `Open`, `Close`, `Shutdown`) and wire it
 up with the `instance!` macro, then reach every subsystem through the `FABRIC`
-root. Distributed as a Cargo crate and compiled to a `wasm32` reactor module. See [RUST/README.md](RUST/README.md) for building the
+root. Distributed as a Cargo crate and compiled to a `wasm32` reactor module. See [RUST/README.md](https://github.com/MetaversalCorp/SneezeSDK_Rust) for building the
 `csstool` example.
 
 ### C
@@ -34,28 +34,28 @@ The C binding, built with Emscripten. C has no methods, so the SDK is flat:
 every subsystem method becomes a free function whose first argument is the handle
 Rust would have called the method on (for example `pFabric.Console ().Log (s)`
 becomes `Console_Log (twFabricIx, s)`). It layers directly on the canonical ABI
-header and mirrors the Rust SDK function for function. See [C/README.md](C/README.md) for building the
+header and mirrors the Rust SDK function for function. See [C/README.md](https://github.com/MetaversalCorp/SneezeSDK_C) for building the
 `cstool` example.
 
 ### C++
 
 The C++ binding over the same frozen ABI, a sibling to the C and Rust SDKs. Built
 with Emscripten and following the shared object model and `Open` lifecycle
-documented for every language. See [CPP/README.md](CPP/README.md) for building the
+documented for every language. See [CPP/README.md](https://github.com/MetaversalCorp/SneezeSDK_CPP) for building the
 `cppstool` example.
 
 ### C#
 
 The guest-side .NET SDK, published as a `wasi-wasm` reactor module via Native AOT
 (same ABI surface as the Rust and C SDKs). Build with the .NET SDK 9.0 or later;
-Visual Studio is optional. See [CS/README.md](CS/README.md) for building the
+Visual Studio is optional. See [CS/README.md](https://github.com/MetaversalCorp/SneezeSDK_CS) for building the
 `csstool` example.
 
 ### AssemblyScript
 
 The guest-side AssemblyScript SDK, built with `asc`. It is the TypeScript-syntax
 binding over the same canonical ABI, mirroring the Rust SDK class for class
-alongside the C, C++, and C# ports. See [AS/README.md](AS/README.md) for building
+alongside the C, C++, and C# ports. See [AS/README.md](https://github.com/MetaversalCorp/SneezeSDK_AS) for building
 the `as_stool` example.
 
 ## Shared resources at the root
