@@ -17,7 +17,8 @@ shared documentation and the canonical ABI header live here at the root.
 | **Rust** | `Rust/` | `SneezeSDK_Rust` | Cargo, `wasm32` target | Reference SDK |
 | **C** | `C/` | `SneezeSDK_C` | Emscripten (`emcc`) | Available |
 | **C++** | `Cpp/` | `SneezeSDK_CPP` | Emscripten (`emcc`) | Available |
-| **C#** | `CS/` | (in-tree) | .NET SDK, `wasi-wasm` Native AOT | Available |
+| **C#** | `CS/` | `SneezeSDK_CS` | .NET SDK, `wasi-wasm` Native AOT | Available |
+| **AssemblyScript** | `AS/` | `SneezeSDK_AS` | AssemblyScript, `asc` | Available |
 
 ### Rust
 
@@ -47,6 +48,13 @@ The guest-side .NET SDK, published as a `wasi-wasm` reactor module via Native AO
 (same ABI surface as the Rust and C SDKs). Build with the .NET SDK 9.0 or later;
 Visual Studio is optional. See [CS/README.md](CS/README.md) for building the
 `csstool` example.
+
+### AssemblyScript
+
+The guest-side AssemblyScript SDK, built with `asc`. It is the TypeScript-syntax
+binding over the same canonical ABI, mirroring the Rust SDK class for class
+alongside the C, C++, and C# ports. See [AS/README.md](AS/README.md) for building
+the `as_stool` example.
 
 ## Shared resources at the root
 

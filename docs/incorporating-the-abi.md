@@ -20,7 +20,7 @@ WebAssembly links imports and exports by name, so the ABI is deliberately tiny a
 |--------|-----------|---------|
 | `Alloc` | `(i32 nSize) -> i32 nOffset` | Host asks the guest to reserve memory, then writes bytes into it. |
 | `Free` | `(i32 nOffset, i32 nSize)` | Release a block from `Alloc`. |
-| `Notify` | `(i32 nOffset, i32 nSize) -> i64` | Host -> guest event delivery. Inert until node events land (a later roadmap item). |
+| `Notify` | `(i32 nOffset, i32 nSize) -> i64` | Host -> guest event delivery (first user: the `TIMER_FIRED` callback). |
 | `Init` | `()` | Module loaded. |
 | `Open` | `(i64 twFabricIx, i32 nOffset, i32 nSize)` | A fabric opened. `twFabricIx` is the fabric handle; the immutable snapshot blob is at `(nOffset, nSize)` in your memory. |
 | `Close` | `(i64 twFabricIx)` | A fabric closed. |
@@ -34,7 +34,7 @@ Every buffer passed to `Call` (and every buffer delivered through `Notify`) begi
 
 | Field | Type | Meaning |
 |-------|------|---------|
-| `wType` | `u16` | Subsystem id (1 `CONSOLE`, 2 `STORAGE`, 3 `NETWORK`, 4 `VIEWPORT`, 5 `SCENE`, 6 `NODE`, 7 `DATA`). |
+| `wType` | `u16` | Subsystem id (1 `DATA`, 2 `CONSOLE`, 3 `STORAGE`, 4 `NETWORK`, 5 `VIEWPORT`, 6 `SCENE`, 7 `FABRIC`, 8 `NODE`, 9 `CHRONO`, 10 `PERFORMANCE`, 11 `TIMER`, 12 `SERVICES`). |
 | `wMethod` | `u16` | Method id within that subsystem. |
 | `dwSize` | `u32` | Payload byte count that follows the header. |
 
@@ -91,13 +91,13 @@ struct MY_MODULE;
 
 impl INSTANCE for MY_MODULE
 {
-   fn Open (pFabric: FABRIC)
+   fn Open (pHost: &HOST)
    {
-      pFabric.Console ().Log ("hello from wasm");
+      pHost.Console ().Log ("hello from wasm");
 
       let mut pRoot = SNEEZE_ABI_MAPOBJECT::Physical ();
       pRoot.Name ("Stool").Reference ("assets/Stool.glb");
-      pFabric.Scene ().Node_Root (&pRoot);
+      pHost.Fabric ().Node_Root (&pRoot);
    }
 }
 
@@ -114,7 +114,7 @@ The `instance!` macro emits all seven exports for you and routes them to your `I
 
 ### Any other language
 
-There is no SDK yet for languages other than Rust, so until one exists you implement the ABI directly. The recipe is the same everywhere; only the syntax differs. The tiers in which the SDK is expected to fan out are, roughly: Rust / C-C++ / Zig first; Go-TinyGo / AssemblyScript / C#(.NET) next; Python / JS-TS last.
+SDKs ship for C, C++, and Rust; for a language without one yet, you implement the ABI directly. The recipe is the same everywhere; only the syntax differs. The tiers in which the SDK is expected to fan out are, roughly: Rust / C-C++ / Zig first; Go-TinyGo / AssemblyScript / C#(.NET) next; Python / JS-TS last.
 
 To bring up a new language you must:
 

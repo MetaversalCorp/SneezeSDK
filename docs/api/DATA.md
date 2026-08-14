@@ -1,6 +1,6 @@
 # DATA
 
-The fabric's read-only configuration `Data` tree, reached through [`FABRIC::Data`](FABRIC.md#data). This is the open-ended `Data` block the fabric author wrote in the manifest - scene descriptions, parameters, whatever the module needs. `DATA` is a zero-cost view over the fabric handle.
+The fabric's read-only configuration `Data` tree, reached through [`HOST::Data`](HOST.md#data). This is the open-ended `Data` block the fabric author wrote in the manifest - scene descriptions, parameters, whatever the module needs. `DATA` is a zero-cost view over the fabric handle.
 
 `DATA` is the **immutable analog of [`STORAGE`](STORAGE.md)**: the same path-addressed, JSON-text model, but read-only (`Has` and `Get` only, no `Set` or `Remove`) and with no scope, because the data belongs to the one fabric.
 
@@ -24,7 +24,7 @@ pub fn Has (&self, sPath: &str) -> bool
 - **Example:**
 
 ```rust
-if pFabric.Data ().Has ("Scene.aLight")
+if pHost.Data ().Has ("Scene.aLight")
 {
    // the author supplied lights
 }
@@ -44,15 +44,15 @@ pub fn Get (&self, sPath: &str) -> Option<String>
 - **Example:**
 
 ```rust
-if let Some (sTitle) = pFabric.Data ().Get ("Scene.sTitle")
+if let Some (sTitle) = pHost.Data ().Get ("Scene.sTitle")
 {
-   pFabric.Console ().Log (&sTitle);
+   pHost.Console ().Log (&sTitle);
 }
 ```
 
-- **See also:** [`Has`](#has), [`STORAGE::Get`](STORAGE.md#get), [`SCENE::Node_Map`](SCENE.md#node_map) (build a node tree straight from a data path).
+- **See also:** [`Has`](#has), [`STORAGE::Get`](STORAGE.md#get), [`FABRIC::Node_Map_Data`](FABRIC.md#node_map_data) (build a node tree straight from a data path).
 
 ## See also
 
 - [STORAGE](STORAGE.md) - the mutable, scoped counterpart with the same shape.
-- [SCENE::Node_Map](SCENE.md#node_map) - lets the engine read a `Data` subtree and build nodes from it for you.
+- [FABRIC::Node_Map_Data](FABRIC.md#node_map_data) - lets the engine read a `Data` subtree and build nodes from it for you.

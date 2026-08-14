@@ -1,6 +1,6 @@
 # CHRONO
 
-The wall clock, reached through [`FABRIC::Chrono`](FABRIC.md#chrono). It answers "what time is it now?" and hands you the calendar logic that sits behind a [`MOMENT`](MOMENT.md). It is the SDK's analog of the JavaScript `Date` *namespace* (`Date.now`), where a [`MOMENT`](MOMENT.md) is the analog of a `Date` *instance* - splitting the "two hats" JavaScript's `Date` wears into two names on purpose.
+The wall clock, reached through [`HOST::Chrono`](HOST.md#chrono). It answers "what time is it now?" and hands you the calendar logic that sits behind a [`MOMENT`](MOMENT.md). It is the SDK's analog of the JavaScript `Date` *namespace* (`Date.now`), where a [`MOMENT`](MOMENT.md) is the analog of a `Date` *instance* - splitting the "two hats" JavaScript's `Date` wears into two names on purpose.
 
 `CHRONO` is a zero-cost view: it wraps the fabric handle and allocates nothing. The clock itself is global (process-wide, from the host's real-time clock), so these calls report the same instant for every fabric.
 
@@ -20,7 +20,7 @@ pub fn Time (&self) -> i64
 - **Example:**
 
 ```rust
-let tmNow = pFabric.Chrono ().Time ();
+let tmNow = pHost.Chrono ().Time ();
 ```
 
 - **See also:** [`Date`](#date), [`Now`](#now).
@@ -37,7 +37,7 @@ pub fn Date (&self) -> i64
 - **Example:**
 
 ```rust
-let dtNow = pFabric.Chrono ().Date ();
+let dtNow = pHost.Chrono ().Date ();
 ```
 
 - **See also:** [`Time`](#time), [`Now`](#now).
@@ -54,8 +54,8 @@ pub fn Now (&self) -> MOMENT
 - **Example:**
 
 ```rust
-let m = pFabric.Chrono ().Now ();
-pFabric.Console ().Log (&m.String_Iso ());
+let m = pHost.Chrono ().Now ();
+pHost.Console ().Log (&m.String_Iso ());
 ```
 
 - **See also:** [`MOMENT`](MOMENT.md), [`PERFORMANCE`](PERFORMANCE.md) (for monotonic elapsed timing rather than wall time).

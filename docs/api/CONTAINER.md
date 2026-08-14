@@ -1,6 +1,6 @@
 # CONTAINER
 
-The container identity (the engine's `CID`) and its trust standing. Reached through [`FABRIC::Container`](FABRIC.md#snapshot-views), a read-only view over the [Open snapshot](SNAPSHOT.md).
+The container identity (the engine's `CID`) and its trust standing. Reached through [`HOST::Container`](HOST.md#snapshot-views), a read-only view over the [Open snapshot](SNAPSHOT.md).
 
 A container is identified by persona + organization + container name. Friendly display names are composed guest-side from these raw fields, not transported.
 
@@ -38,10 +38,10 @@ It is transported as an integer precisely so a module can branch on it without p
 ```rust
 use sneeze::abi::*;
 
-fn Open (pFabric: FABRIC)
+fn Open (pHost: HOST)
 {
-   let pContainer = pFabric.Container ();
-   let pConsole   = pFabric.Console ();
+   let pContainer = pHost.Container ();
+   let pConsole   = pHost.Console ();
 
    pConsole.Log (pContainer.Name ());
    pConsole.Log (&pContainer.DisplayOrganization ());
@@ -55,5 +55,5 @@ fn Open (pFabric: FABRIC)
 
 ## See also
 
-- [FABRIC](FABRIC.md#snapshot-views) - how to obtain the view.
+- [HOST](HOST.md#snapshot-views) - how to obtain the view.
 - [SIGNATURE](SIGNATURE.md) - the verification detail behind the trust level.

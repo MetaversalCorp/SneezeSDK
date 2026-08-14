@@ -1,6 +1,6 @@
 # TIMER
 
-Scheduled callbacks, reached through [`FABRIC::Timer`](FABRIC.md#timer). Arm a one-shot or a repeating timer and the engine calls your module back when it fires - the analog of the browser's `setTimeout` / `setInterval` / `clearTimeout`. It is a zero-cost view over the fabric handle.
+Scheduled callbacks, reached through [`HOST::Timer`](HOST.md#timer). Arm a one-shot or a repeating timer and the engine calls your module back when it fires - the analog of the browser's `setTimeout` / `setInterval` / `clearTimeout`. It is a zero-cost view over the fabric handle.
 
 A fire is **not** a return value; it arrives later as an [`INSTANCE::Timer`](INSTANCE.md#timer) callback. Every arm returns a `twTimerIx` (the timer id, `0` on failure) and carries a `qwParam` cookie that the engine echoes back on the callback, so one handler can tell its timers apart without a lookup table.
 
@@ -33,9 +33,9 @@ pub fn Set (&self, nValue: i32, eUnit: eSNEEZE_ABI_TIMER_UNIT, qwParam: u64) -> 
 - **Example:**
 
 ```rust
-fn Open (pFabric: FABRIC)
+fn Open (pHost: &HOST)
 {
-   pFabric.Timer ().Set (500, eSNEEZE_ABI_TIMER_UNIT::kSNEEZE_ABI_TIMER_UNIT_MS, 1);
+   pHost.Timer ().Set (500, eSNEEZE_ABI_TIMER_UNIT::kSNEEZE_ABI_TIMER_UNIT_MS, 1);
 }
 ```
 
@@ -53,10 +53,10 @@ pub fn Interval (&self, nValue: i32, eUnit: eSNEEZE_ABI_TIMER_UNIT, qwParam: u64
 - **Example:**
 
 ```rust
-fn Open (pFabric: FABRIC)
+fn Open (pHost: &HOST)
 {
    // tick 60 times a second, tagged 2
-   pFabric.Timer ().Interval (60, eSNEEZE_ABI_TIMER_UNIT::kSNEEZE_ABI_TIMER_UNIT_HZ, 2);
+   pHost.Timer ().Interval (60, eSNEEZE_ABI_TIMER_UNIT::kSNEEZE_ABI_TIMER_UNIT_HZ, 2);
 }
 ```
 
@@ -75,9 +75,9 @@ pub fn Clear (&self, twTimerIx: u64) -> bool
 - **Example:**
 
 ```rust
-let twId = pFabric.Timer ().Interval (1, eSNEEZE_ABI_TIMER_UNIT::kSNEEZE_ABI_TIMER_UNIT_MS, 0);
+let twId = pHost.Timer ().Interval (1, eSNEEZE_ABI_TIMER_UNIT::kSNEEZE_ABI_TIMER_UNIT_MS, 0);
 // ... later ...
-pFabric.Timer ().Clear (twId);
+pHost.Timer ().Clear (twId);
 ```
 
 - **See also:** [`Set`](#set), [`Interval`](#interval).
@@ -89,14 +89,14 @@ Implement [`INSTANCE::Timer`](INSTANCE.md#timer) to receive fires. The engine pa
 ```rust
 impl INSTANCE for MY_MODULE
 {
-   fn Open (pFabric: FABRIC)
+   fn Open (pHost: &HOST)
    {
-      pFabric.Timer ().Interval (1, eSNEEZE_ABI_TIMER_UNIT::kSNEEZE_ABI_TIMER_UNIT_HZ, 7);
+      pHost.Timer ().Interval (1, eSNEEZE_ABI_TIMER_UNIT::kSNEEZE_ABI_TIMER_UNIT_HZ, 7);
    }
 
-   fn Timer (pFabric: FABRIC, twTimerIx: u64, qwParam: u64)
+   fn Timer (pHost: &HOST, twTimerIx: u64, qwParam: u64)
    {
-      pFabric.Console ().Log (&format! ("timer {} fired (param {})", twTimerIx, qwParam));
+      pHost.Console ().Log (&format! ("timer {} fired (param {})", twTimerIx, qwParam));
    }
 }
 ```

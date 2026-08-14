@@ -29,7 +29,7 @@ pub fn Parse (sText: &str, eZone: eSNEEZE_ABI_CHRONO_ZONE) -> MOMENT
 - **Example:**
 
 ```rust
-let m0 = pFabric.Chrono ().Now ();                                    // right now
+let m0 = pHost.Chrono ().Now ();                                    // right now
 let m1 = MOMENT::From_Date (0);                                       // 1970-01-01T00:00:00Z
 let m2 = MOMENT::From_Parts (2026, 7, 30, 14, 0, 0,
    eSNEEZE_ABI_CHRONO_ZONE::kSNEEZE_ABI_CHRONO_ZONE_UTC);
@@ -56,10 +56,10 @@ pub fn Zone_Offset (&self) -> i32
 - **Example:**
 
 ```rust
-let m = pFabric.Chrono ().Now ();
+let m = pHost.Chrono ().Now ();
 if m.IsValid ()
 {
-   pFabric.Console ().Log (&format! ("unix ms = {}", m.Date ()));
+   pHost.Console ().Log (&format! ("unix ms = {}", m.Date ()));
 }
 ```
 
@@ -83,8 +83,8 @@ pub fn Tick    (&self) -> i32      pub fn Tick_Utc    (&self) -> i32
 - **Example:**
 
 ```rust
-let m = pFabric.Chrono ().Now ();
-pFabric.Console ().Log (&format! ("{:04}-{:02}-{:02}", m.Year (), m.Month (), m.Day ()));
+let m = pHost.Chrono ().Now ();
+pHost.Console ().Log (&format! ("{:04}-{:02}-{:02}", m.Year (), m.Month (), m.Day ()));
 ```
 
 - **See also:** [`String_Iso`](#formatting), [`Format`](#formatting).
@@ -109,7 +109,7 @@ pub fn Date_Set   (&mut self, dt: i64)
 - **Example:**
 
 ```rust
-let mut m = pFabric.Chrono ().Now ();
+let mut m = pHost.Chrono ().Now ();
 m.Hour_Set (0);
 m.Minute_Set (0);
 m.Second_Set (0);   // local midnight today
@@ -136,9 +136,9 @@ pub fn String_Utc (&self) -> String
 - **Example:**
 
 ```rust
-let m = pFabric.Chrono ().Now ();
-pFabric.Console ().Log (&m.String_Iso ());
-pFabric.Console ().Log (&m.Format (eSNEEZE_ABI_CHRONO_ZONE::kSNEEZE_ABI_CHRONO_ZONE_LOCAL, "%A %B %d"));
+let m = pHost.Chrono ().Now ();
+pHost.Console ().Log (&m.String_Iso ());
+pHost.Console ().Log (&m.Format (eSNEEZE_ABI_CHRONO_ZONE::kSNEEZE_ABI_CHRONO_ZONE_LOCAL, "%A %B %d"));
 ```
 
 - **See also:** [`CHRONO`](CHRONO.md), [API overview](overview.md).

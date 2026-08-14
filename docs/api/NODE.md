@@ -1,6 +1,6 @@
 # NODE
 
-A live scene object, returned by the [`SCENE`](SCENE.md) create calls (`Node_Root`, `Node_Open`, `Node_Map`). Where [`SNEEZE_ABI_MAPOBJECT`](MAPOBJECT.md) is the *template* used to create a node, `NODE` is the *live* object afterward: you mutate its properties through this handle. It carries the node's composed identity (class + object index) and routes mutations by it.
+A live scene object, returned by the [`FABRIC`](FABRIC.md) create calls (`Node_Root`, `Node_Open`, `Node_Map_Data`). Where [`SNEEZE_ABI_MAPOBJECT`](MAPOBJECT.md) is the *template* used to create a node, `NODE` is the *live* object afterward: you mutate its properties through this handle. It carries the node's composed identity (class + object index) and routes mutations by it.
 
 ## Local reads (no host call)
 
@@ -47,18 +47,18 @@ pub fn IsValid (&self) -> bool
 
 - **Parameters:** none.
 - **Returns:** `true` unless the creating call failed.
-- **Description:** A node is invalid if the create call returned the error sentinel or zero. Check this after `Node_Root` / `Node_Open` / `Node_Map` before using the node.
+- **Description:** A node is invalid if the create call returned the error sentinel or zero. Check this after `Node_Root` / `Node_Open` / `Node_Map_Data` before using the node.
 - **Example:**
 
 ```rust
-let pNode = pFabric.Scene ().Node_Root (&pRoot);
+let pNode = pHost.Fabric ().Node_Root (&pRoot);
 if !pNode.IsValid ()
 {
-   pFabric.Console ().Error ("root create failed");
+   pHost.Console ().Error ("root create failed");
 }
 ```
 
-- **See also:** [`SCENE::Node_Root`](SCENE.md#node_root).
+- **See also:** [`FABRIC::Node_Root`](FABRIC.md#node_root).
 
 ## Property mutators (host calls)
 
@@ -180,7 +180,7 @@ pub fn Panel (&self, sRml: &str)
 ```rust
 let mut pObj = SNEEZE_ABI_MAPOBJECT::Panel ();
 pObj.Parent (pRoot.Class (), pRoot.ObjectIx ());
-let pPanel = pFabric.Scene ().Node_Open (&pObj);
+let pPanel = pHost.Fabric ().Node_Open (&pObj);
 pPanel.Panel ("<rml><body>Hello</body></rml>");
 ```
 
