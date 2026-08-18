@@ -58,8 +58,43 @@ binding over the same canonical ABI, mirroring the Rust SDK class for class
 alongside the C, C++, and C# ports. See [AS/README.md](https://github.com/MetaversalCorp/SneezeSDK_AS) for building
 the `as_stool` example.
 
+## Versioning
+
+The root `VERSION` file carries the version of the collection as a whole. It is
+derived from the language SDKs rather than set by hand: the major and minor
+numbers are shared, and the patch number is the highest patch number found across
+the SDKs, so the umbrella never lags behind its newest member.
+
+```
+SneezeSDK        0.1.Y   where Y = MAX (A, B, C, D, E)
+
+SneezeSDK_AS     0.1.A
+SneezeSDK_C      0.1.B
+SneezeSDK_CPP    0.1.C
+SneezeSDK_CS     0.1.D
+SneezeSDK_Rust   0.1.E
+```
+
+**A compatible version file is needed for all the different versions of the
+SneezeSDK.** Each language SDK must declare its version somewhere the umbrella
+can read it, in a form that is consistent across every port. That is not yet the
+case - each SDK either states its version in a toolchain-specific manifest or
+does not state one at all:
+
+| SDK | Version | Declared in |
+|-----|---------|-------------|
+| `AS/` | 0.1.0 | `package.json` |
+| `C/` | not declared | - |
+| `Cpp/` | not declared | - |
+| `CS/` | not declared | - |
+| `Rust/` | 0.1.1 | `Cargo.toml` |
+
+Until every SDK carries a version in a common location, `Y` can only be computed
+from the SDKs that declare one.
+
 ## Shared resources at the root
 
+- `VERSION` - the version of the collection, `0.1.Y` as described above.
 - `include/sneeze_abi.h` - the canonical, frozen ABI header. The normative
   contract every SDK layers on, including the flat C API name reference.
 - `docs/` - language-neutral documentation: the [SDK reference](docs/README.md),
