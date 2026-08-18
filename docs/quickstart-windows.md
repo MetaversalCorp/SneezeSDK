@@ -7,7 +7,7 @@ This guide takes you from nothing to a running `.wasm` module on Windows. Pick y
 ### Which terminal to use
 
 - **Track A (Rust):** Use **PowerShell**. `cargo`, `rustup`, and `winget` all work natively in PowerShell with no extra setup.
-- **Track B (C/Emscripten):** Use **PowerShell** (Windows Terminal with the PowerShell tab). The Emscripten environment script is a `.bat` file that works in both `cmd` and PowerShell; PowerShell is recommended for consistency.
+- **Track B (C/Emscripten):** Use **PowerShell** (Windows Terminal with the PowerShell tab). The Emscripten environment script is a `.bat` file that works in both `cmd` and PowerShell; PowerShell is used throughout this guide for consistency with Track A.
 
 Open Windows Terminal and select a **PowerShell** tab before starting either track.
 
@@ -32,9 +32,8 @@ After cloning, your directory layout will look like this:
 ```
 C:\dev\
 └── SneezeSDK\                  ← you are here after `cd SneezeSDK`
-    ├── sdk\
-    │   └── include\
-    │       └── sneeze_abi.h    ← canonical ABI header
+    ├── include\
+    │   └── sneeze_abi.h    ← canonical ABI header
     ├── Rust\                   ← SneezeSDK_Rust submodule (used by Track A)
     └── C\                      ← SneezeSDK_C submodule (used by Track B)
 ```
@@ -84,7 +83,7 @@ Your layout is now:
 SneezeSDK\
 ├── Rust\           ← SneezeSDK_Rust (local library source)
 ├── C\
-├── sdk\
+├── include\
 └── my_module\      ← your new project (you are here)
     ├── Cargo.toml
     └── src\
@@ -169,7 +168,7 @@ Your layout is now:
 ```
 C:\dev\
 ├── SneezeSDK\
-│   ├── sdk\include\
+│   ├── include\
 │   ├── Rust\
 │   └── C\              ← SneezeSDK_C (SDK source files are here)
 └── emsdk\              ← Emscripten toolchain
@@ -220,7 +219,7 @@ You only define the lifecycle hooks you need. The SDK supplies do-nothing defaul
 ```powershell
 # pwd: C:\dev\SneezeSDK\C
 emcc -std=c11 -Os -Wno-address-of-packed-member `
-     -Iinclude -Isrc -I..\sdk\include `
+     -Iinclude -Isrc -I..\include `
      -sSTANDALONE_WASM -sWASM_BIGINT --no-entry `
      -sERROR_ON_UNDEFINED_SYMBOLS=0 -sMALLOC=emmalloc `
      src/sneeze_ffi.c src/sneeze_json.c src/sneeze_snapshot.c `
@@ -228,7 +227,7 @@ emcc -std=c11 -Os -Wno-address-of-packed-member `
      my_module.c -o my_module.wasm
 ```
 
-> `-I..\sdk\include` resolves to `SneezeSDK\sdk\include\` — the ABI header shared by all languages.
+> `-I..\include` resolves to `SneezeSDK\include\` — the ABI header shared by all languages.
 
 You should get a `my_module.wasm` file. Confirm it has the right shape:
 
