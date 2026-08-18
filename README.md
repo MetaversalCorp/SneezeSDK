@@ -76,25 +76,51 @@ SneezeSDK_Rust   0.1.E
 ```
 
 **A compatible version file is needed for all the different versions of the
-SneezeSDK.** Each language SDK must declare its version somewhere the umbrella
-can read it, in a form that is consistent across every port. That is not yet the
-case - each SDK either states its version in a toolchain-specific manifest or
-does not state one at all:
+SneezeSDK.** Every SDK therefore declares its version the same way: a `VERSION`
+file at the root of the SDK holding a single `MAJOR.MINOR.PATCH` line. Same
+filename, same location, same format in every language, so the umbrella reads one
+kind of file instead of five toolchain-specific manifests.
 
-| SDK | Version | Declared in |
-|-----|---------|-------------|
-| `AS/` | 0.1.0 | `package.json` |
-| `C/` | not declared | - |
-| `Cpp/` | not declared | - |
-| `CS/` | not declared | - |
-| `Rust/` | 0.1.1 | `Cargo.toml` |
+| SDK | Version file | Toolchain mirror |
+|-----|--------------|------------------|
+| `AS/` | `AS/VERSION` | `package.json` |
+| `C/` | `C/VERSION` | - |
+| `Cpp/` | `Cpp/VERSION` | - |
+| `CS/` | `CS/VERSION` | - |
+| `Rust/` | `Rust/VERSION` | `Cargo.toml` |
 
-Until every SDK carries a version in a common location, `Y` can only be computed
-from the SDKs that declare one.
+Where a toolchain needs the version in its own manifest as well (Cargo for Rust,
+npm for AssemblyScript), the `VERSION` file is authoritative and the manifest is
+a mirror; the sync script warns when the two drift apart.
+
+### Keeping it in step
+
+`tools/version-sync.sh` reads the per-SDK `VERSION` files, checks they share one
+`MAJOR.MINOR` line, and rewrites the root `VERSION` with the highest patch number
+it finds:
+
+```sh
+tools/version-sync.sh           # rewrite the root VERSION when it is stale
+tools/version-sync.sh --check   # report staleness without writing, exit 1 if stale
+```
+
+Bumping a submodule pointer is the moment the umbrella learns that an SDK changed
+version, so the sync also runs from a `pre-commit` hook that stages the result.
+Enable the checked-in hooks once per clone:
+
+```sh
+git config core.hooksPath tools/hooks
+```
+
+An SDK whose submodule is not checked out is skipped, which keeps the hook usable
+in a clone without submodules. Releases are tagged `vMAJOR.MINOR.PATCH` to match
+the `VERSION` file.
 
 ## Shared resources at the root
 
 - `VERSION` - the version of the collection, `0.1.Y` as described above.
+- `tools/` - `version-sync.sh`, which derives the root `VERSION` from the SDKs,
+  and `hooks/`, the checked-in git hooks that run it.
 - `include/sneeze_abi.h` - the canonical, frozen ABI header. The normative
   contract every SDK layers on, including the flat C API name reference.
 - `docs/` - language-neutral documentation: the [SDK reference](docs/README.md),

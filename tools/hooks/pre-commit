@@ -1,0 +1,25 @@
+#!/bin/sh
+# Keep the root VERSION in step with the per-SDK VERSION files.
+#
+# Bumping a submodule pointer is the moment the umbrella learns that an SDK
+# changed version, so recompute on every commit and stage the result. Install
+# with either:
+#
+#    git config core.hooksPath tools/hooks
+#
+# or by pointing .git/hooks/pre-commit at this file:
+#
+#    #!/bin/sh
+#    exec "$(git rev-parse --show-toplevel)/tools/hooks/pre-commit" "$@"
+
+set -e
+
+sRoot=$(git rev-parse --show-toplevel)
+
+"$sRoot/tools/version-sync.sh"
+
+if ! git diff --quiet -- "$sRoot/VERSION"
+then
+   git add -- "$sRoot/VERSION"
+   printf 'pre-commit: staged the recomputed VERSION\n'
+fi
