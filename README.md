@@ -60,10 +60,10 @@ the `as_stool` example.
 
 ## Versioning
 
-The root `VERSION` file carries the version of the collection as a whole. It is
-derived from the language SDKs rather than set by hand: the major and minor
-numbers are shared, and the patch number is the highest patch number found across
-the SDKs, so the umbrella never lags behind its newest member.
+The root `VERSION` file carries the version of the collection as a whole. It
+follows the language SDKs: the major and minor numbers are shared, and the patch
+number is the highest patch number found across the SDKs, so the umbrella never
+lags behind its newest member.
 
 ```
 SneezeSDK        0.1.Y   where Y = MAX (A, B, C, D, E)
@@ -90,37 +90,16 @@ kind of file instead of five toolchain-specific manifests.
 | `Rust/` | `Rust/VERSION` | `Cargo.toml` |
 
 Where a toolchain needs the version in its own manifest as well (Cargo for Rust,
-npm for AssemblyScript), the `VERSION` file is authoritative and the manifest is
-a mirror; the sync script warns when the two drift apart.
+npm for AssemblyScript), the `VERSION` file is authoritative and the manifest
+mirrors it, so the two must be bumped together.
 
-### Keeping it in step
-
-`tools/version-sync.sh` reads the per-SDK `VERSION` files, checks they share one
-`MAJOR.MINOR` line, and rewrites the root `VERSION` with the highest patch number
-it finds:
-
-```sh
-tools/version-sync.sh           # rewrite the root VERSION when it is stale
-tools/version-sync.sh --check   # report staleness without writing, exit 1 if stale
-```
-
-Bumping a submodule pointer is the moment the umbrella learns that an SDK changed
-version, so the sync also runs from a `pre-commit` hook that stages the result.
-Enable the checked-in hooks once per clone:
-
-```sh
-git config core.hooksPath tools/hooks
-```
-
-An SDK whose submodule is not checked out is skipped, which keeps the hook usable
-in a clone without submodules. Releases are tagged `vMAJOR.MINOR.PATCH` to match
-the `VERSION` file.
+When an SDK's version changes, the root `VERSION` is updated to the new highest
+patch number. Releases are tagged `vMAJOR.MINOR.PATCH` to match the `VERSION`
+file.
 
 ## Shared resources at the root
 
 - `VERSION` - the version of the collection, `0.1.Y` as described above.
-- `tools/` - `version-sync.sh`, which derives the root `VERSION` from the SDKs,
-  and `hooks/`, the checked-in git hooks that run it.
 - `include/sneeze_abi.h` - the canonical, frozen ABI header. The normative
   contract every SDK layers on, including the flat C API name reference.
 - `docs/` - language-neutral documentation: the [SDK reference](docs/README.md),
