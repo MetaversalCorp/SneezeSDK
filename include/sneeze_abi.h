@@ -62,14 +62,19 @@ extern "C" {
 
 // ---------------------------------------------------------------------------
 // Handles. HNODE is a 64-bit value handle (an object index - not a pointer,
-// since it exceeds a wasm32 pointer). HMAPOBJECT is an opaque pointer to a
-// guest-local builder. The fabric itself is reached through a guest-SDK HOST
-// handle (see the language SDKs), which carries the u64 fabric index the wire
-// formats below call twFabricIx. C gives HNODE/HMAPOBJECT no type safety (bare
-// integers); the Rust SDK wraps them in newtypes.
+// since it exceeds a wasm32 pointer). HREQUEST and HSOCKET are likewise 64-bit
+// value handles - the twRequestIx that NETWORK's REQUEST_OPEN returns and the
+// twSocketIx that SOCKET_OPEN returns, by which every other method of each is
+// addressed. HMAPOBJECT is an opaque pointer to a guest-local builder. The
+// fabric itself is reached through a guest-SDK HOST handle (see the language
+// SDKs), which carries the u64 fabric index the wire formats below call
+// twFabricIx. C gives these no type safety (bare integers); the Rust SDK wraps
+// them in newtypes.
 // ---------------------------------------------------------------------------
 
 typedef uint64_t   HNODE;
+typedef uint64_t   HREQUEST;
+typedef uint64_t   HSOCKET;
 typedef uint32_t   HMAPOBJECT;
 
 // ---------------------------------------------------------------------------
@@ -107,9 +112,21 @@ enum eSNEEZE_ABI_TYPE
 
 // ---------------------------------------------------------------------------
 // wMethod - method registry, one enum per subsystem. Numbers are PERMANENT,
-// MONOTONIC, and APPEND-ONLY: a revised method takes the next free number,
-// never reuses one, and gaps are never backfilled. This is the backward-compat
-// guarantee - an old module keeps sending old numbers forever.
+// MONOTONIC, and APPEND-ONLY: a revised method takes the next free number and
+// never reuses a RETIRED one. This is the backward-compat guarantee - an old
+// module keeps sending old numbers forever.
+//
+// A RESERVED RANGE is the single exception, and it is not a contradiction. A
+// block declared reserved up front (see NETWORK) was never assigned to
+// anything, so no module ever sent those numbers and filling them later cannot
+// collide with anything deployed. The distinction that matters is:
+//
+//   reserved - never assigned, never sent, free to fill by design
+//   retired  - assigned and shipped, then withdrawn, dead forever
+//
+// Only retired numbers are untouchable. A method still carrying the "not
+// implemented yet" marker below has never been sent by anything and is
+// therefore reserved, not retired.
 // ---------------------------------------------------------------------------
 
 // DATA is the fabric's config "Data" tree, served read-only (no Set/Remove) -
@@ -147,9 +164,61 @@ enum eSNEEZE_ABI_METHOD_STORAGE
    kSNEEZE_ABI_METHOD_STORAGE_REMOVE                     =  4,
 };
 
+// NETWORK is the guest's request and socket API, modeled on the browser's - one
+// request object with a verb, and one WebSocket. It is deliberately laid out as
+// two contiguous blocks with reserve space after each, so a method we did not
+// think of can land beside its relatives instead of at the end of the enum:
+//
+//   1-29   REQUEST - an XHR-shaped HTTP request
+//   30-59  SOCKET  - a browser-shaped WebSocket
+//
+// A GET runs through the engine's cache exactly as an asset fetch does, so two
+// guests asking for one URL share a single fetch. Every other verb is fetched
+// fresh into transitory space and never reused. Either way the request is a
+// first-class FILE, which is what makes it visible in the inspector.
+//
+// FETCH = 1 was declared here but never implemented and never sent, so the
+// number is reserved rather than retired (see the numbering rule above) and
+// REQUEST_OPEN takes it.
 enum eSNEEZE_ABI_METHOD_NETWORK
 {
-   kSNEEZE_ABI_METHOD_NETWORK_FETCH                      =  1,        // not implemented yet (host new)
+   kSNEEZE_ABI_METHOD_NETWORK_REQUEST_OPEN               =  1,   // (eVerb, url, integrity) -> twRequestIx
+   kSNEEZE_ABI_METHOD_NETWORK_REQUEST_HEADER_SET         =  2,   // set one request header (before SEND)
+   kSNEEZE_ABI_METHOD_NETWORK_REQUEST_TIMEOUT_SET        =  3,   // per-request timeout in ms (before SEND)
+   kSNEEZE_ABI_METHOD_NETWORK_REQUEST_SEND               =  4,   // issue it, with an optional body
+   kSNEEZE_ABI_METHOD_NETWORK_REQUEST_ABORT              =  5,   // stop delivering to this caller
+   kSNEEZE_ABI_METHOD_NETWORK_REQUEST_CLOSE              =  6,   // mirror of OPEN
+   kSNEEZE_ABI_METHOD_NETWORK_REQUEST_STATE              =  7,   // -> eSNEEZE_ABI_REQUEST_STATE
+   kSNEEZE_ABI_METHOD_NETWORK_REQUEST_STATUS             =  8,   // -> HTTP status code
+   kSNEEZE_ABI_METHOD_NETWORK_REQUEST_STATUS_TEXT        =  9,   // -> reason phrase for the status
+   kSNEEZE_ABI_METHOD_NETWORK_REQUEST_URL                = 10,   // -> final URL after redirects
+   kSNEEZE_ABI_METHOD_NETWORK_REQUEST_HEADER_GET         = 11,   // -> one response header by name
+   kSNEEZE_ABI_METHOD_NETWORK_REQUEST_HEADER_ALL         = 12,   // -> all response headers, CRLF-separated
+   kSNEEZE_ABI_METHOD_NETWORK_REQUEST_BODY               = 13,   // -> response bytes
+   kSNEEZE_ABI_METHOD_NETWORK_REQUEST_SIZE               = 14,   // -> response byte count
+   kSNEEZE_ABI_METHOD_NETWORK_REQUEST_CONTENT_TYPE       = 15,   // -> content-type header
+   kSNEEZE_ABI_METHOD_NETWORK_REQUEST_ERROR              = 16,   // -> transport error text, empty on success
+   kSNEEZE_ABI_METHOD_NETWORK_REQUEST_IS_CACHED          = 17,   // -> bool, served from cache
+   kSNEEZE_ABI_METHOD_NETWORK_REQUEST_COMPLETED          = 18,   // Notify: (twFabricIx, twRequestIx, bSuccess, 0)
+   kSNEEZE_ABI_METHOD_NETWORK_REQUEST_PROGRESS           = 19,   // Notify: (twFabricIx, twRequestIx, nLoaded, nTotal) - not implemented yet (host new)
+                                                                 // 20-29 reserved for REQUEST
+
+   kSNEEZE_ABI_METHOD_NETWORK_SOCKET_OPEN                = 30,   // (url, protocols) -> twSocketIx
+   kSNEEZE_ABI_METHOD_NETWORK_SOCKET_SEND_TEXT           = 31,   // send a UTF-8 text frame
+   kSNEEZE_ABI_METHOD_NETWORK_SOCKET_SEND_BINARY         = 32,   // send a binary frame
+   kSNEEZE_ABI_METHOD_NETWORK_SOCKET_CLOSE               = 33,   // (wCode, reason) -> bool
+   kSNEEZE_ABI_METHOD_NETWORK_SOCKET_STATE               = 34,   // -> eSNEEZE_ABI_SOCKET_STATE (readyState)
+   kSNEEZE_ABI_METHOD_NETWORK_SOCKET_BUFFERED            = 35,   // -> bytes queued but unsent (bufferedAmount)
+   kSNEEZE_ABI_METHOD_NETWORK_SOCKET_PROTOCOL            = 36,   // -> negotiated subprotocol
+   kSNEEZE_ABI_METHOD_NETWORK_SOCKET_URL                 = 37,   // -> the socket's URL
+   kSNEEZE_ABI_METHOD_NETWORK_SOCKET_RECV                = 38,   // -> pops the head of the receive queue
+   kSNEEZE_ABI_METHOD_NETWORK_SOCKET_ERROR               = 39,   // -> last error text
+   kSNEEZE_ABI_METHOD_NETWORK_SOCKET_OPENED              = 40,   // Notify: (twFabricIx, twSocketIx, 0, 0)
+   kSNEEZE_ABI_METHOD_NETWORK_SOCKET_RECEIVED            = 41,   // Notify: (twFabricIx, twSocketIx, bBinary, nSize)
+   kSNEEZE_ABI_METHOD_NETWORK_SOCKET_FAILED              = 42,   // Notify: (twFabricIx, twSocketIx, 0, 0)
+   kSNEEZE_ABI_METHOD_NETWORK_SOCKET_CLOSED              = 43,   // Notify: (twFabricIx, twSocketIx, wCode, bClean)
+   kSNEEZE_ABI_METHOD_NETWORK_SOCKET_FREE                = 44,   // retires the handle (CLOSE only closes the connection)
+                                                                 // 45-59 reserved for SOCKET
 };
 
 enum eSNEEZE_ABI_METHOD_VIEWPORT
@@ -285,6 +354,39 @@ enum eSNEEZE_ABI_TIMER_UNIT
    kSNEEZE_ABI_TIMER_UNIT_TICK                           =  0,
    kSNEEZE_ABI_TIMER_UNIT_MS                             =  1,
    kSNEEZE_ABI_TIMER_UNIT_HZ                             =  2,
+};
+
+// REQUEST_OPEN's verb. GET is 0 because it is the default and the only verb
+// that participates in the cache; the rest are always fetched fresh.
+enum eSNEEZE_ABI_REQUEST_VERB
+{
+   kSNEEZE_ABI_REQUEST_VERB_GET                          =  0,
+   kSNEEZE_ABI_REQUEST_VERB_POST                         =  1,
+   kSNEEZE_ABI_REQUEST_VERB_PUT                          =  2,
+   kSNEEZE_ABI_REQUEST_VERB_PATCH                        =  3,
+   kSNEEZE_ABI_REQUEST_VERB_DELETE                       =  4,
+   kSNEEZE_ABI_REQUEST_VERB_HEAD                         =  5,
+};
+
+// REQUEST_STATE, the analog of XHR's readyState. COMPLETE means the server
+// answered, whatever it answered - a 404 is COMPLETE with a status of 404.
+// FAILED means the transport never delivered a response at all.
+enum eSNEEZE_ABI_REQUEST_STATE
+{
+   kSNEEZE_ABI_REQUEST_STATE_IDLE                        =  0,   // opened, not yet sent
+   kSNEEZE_ABI_REQUEST_STATE_SENDING                     =  1,   // in flight
+   kSNEEZE_ABI_REQUEST_STATE_COMPLETE                    =  2,   // answered
+   kSNEEZE_ABI_REQUEST_STATE_FAILED                      =  3,   // transport failed
+   kSNEEZE_ABI_REQUEST_STATE_ABORTED                     =  4,   // caller stopped listening
+};
+
+// SOCKET_STATE mirrors WebSocket.readyState exactly, values included.
+enum eSNEEZE_ABI_SOCKET_STATE
+{
+   kSNEEZE_ABI_SOCKET_STATE_CONNECTING                   =  0,
+   kSNEEZE_ABI_SOCKET_STATE_OPEN                         =  1,
+   kSNEEZE_ABI_SOCKET_STATE_CLOSING                      =  2,
+   kSNEEZE_ABI_SOCKET_STATE_CLOSED                       =  3,
 };
 
 // CHRONO zone selector: how SET interprets its civil input, and which cached
@@ -529,9 +631,68 @@ SNEEZE_ABI_MOMENT, *PSNEEZE_ABI_MOMENT;
 //     HAS : (i32 nNameOffset, i32 nNameLen)                           -> bool
 //     GET : (i32 nNameOffset, i32 nNameLen, i32 nOutOffset, i32 nOutLen) -> size
 //
+//   NETWORK / REQUEST. OPEN takes the fabric and returns a twRequestIx that
+//   every later call carries instead. HEADER_SET and TIMEOUT_SET only take
+//   effect before SEND. The getters are valid once COMPLETED has fired; before
+//   that they report the request's current state and empty content.
+//     REQUEST_OPEN         : (u64 twFabricIx, i32 eVerb, i32 nUrlOffset, i32 nUrlLen, i32 nIntegrityOffset, i32 nIntegrityLen) -> u64 twRequestIx  (0 = failure)
+//     REQUEST_HEADER_SET   : (u64 twRequestIx, i32 nNameOffset, i32 nNameLen, i32 nValueOffset, i32 nValueLen) -> 0/1
+//     REQUEST_TIMEOUT_SET  : (u64 twRequestIx, i32 nMilli)                 -> 0/1
+//     REQUEST_SEND         : (u64 twRequestIx, i32 nBodyOffset, i32 nBodyLen) -> 0/1  (nBodyLen 0 = no body)
+//     REQUEST_ABORT        : (u64 twRequestIx)                             -> 0/1
+//     REQUEST_CLOSE        : (u64 twRequestIx)                             -> 0/1
+//     REQUEST_STATE        : (u64 twRequestIx)                             -> eSNEEZE_ABI_REQUEST_STATE
+//     REQUEST_STATUS       : (u64 twRequestIx)                             -> i64 HTTP status
+//     REQUEST_SIZE         : (u64 twRequestIx)                             -> i64 byte count
+//     REQUEST_IS_CACHED    : (u64 twRequestIx)                             -> bool
+//     REQUEST_STATUS_TEXT  : (u64 twRequestIx, i32 nOutOffset, i32 nOutLen) -> size
+//     REQUEST_URL          : (u64 twRequestIx, i32 nOutOffset, i32 nOutLen) -> size
+//     REQUEST_HEADER_ALL   : (u64 twRequestIx, i32 nOutOffset, i32 nOutLen) -> size
+//     REQUEST_BODY         : (u64 twRequestIx, i32 nOutOffset, i32 nOutLen) -> size
+//     REQUEST_CONTENT_TYPE : (u64 twRequestIx, i32 nOutOffset, i32 nOutLen) -> size
+//     REQUEST_ERROR        : (u64 twRequestIx, i32 nOutOffset, i32 nOutLen) -> size
+//     REQUEST_HEADER_GET   : (u64 twRequestIx, i32 nNameOffset, i32 nNameLen, i32 nOutOffset, i32 nOutLen) -> size
+//   NETWORK / REQUEST Notify (host -> guest). Every NETWORK notify field is a
+//   u64, as TIMER_FIRED's are, so one packet builder serves them all.
+//     REQUEST_COMPLETED    : (u64 twFabricIx, u64 twRequestIx, u64 bSuccess, u64 0)
+//     REQUEST_PROGRESS     : (u64 twFabricIx, u64 twRequestIx, u64 nLoaded, u64 nTotal)
+//
+//   NETWORK / SOCKET. Same shape: OPEN takes the fabric and returns a handle.
+//   RECV pops one message off the socket's receive queue - the guest calls it
+//   after a RECEIVED notify, which carries the size so the guest can size its
+//   buffer without a query call first. A guest that stops draining eventually
+//   overflows the queue, and from there messages are dropped and SOCKET_ERROR
+//   says so; nothing else about the socket changes.
+//
+//   The URL must be an absolute ws:// or wss:// URL. Unlike a request, it is not
+//   resolved against the fabric - there is no relative form of a socket URL,
+//   which is the same rule the browser's WebSocket constructor applies.
+//
+//   CLOSE closes the connection and leaves the handle readable, so a guest can
+//   still ask what the close code was. FREE is what retires the handle.
+//     SOCKET_OPEN          : (u64 twFabricIx, i32 nUrlOffset, i32 nUrlLen, i32 nProtoOffset, i32 nProtoLen) -> u64 twSocketIx  (0 = failure)
+//     SOCKET_SEND_TEXT     : (u64 twSocketIx, i32 nOffset, i32 nLen)       -> 0/1
+//     SOCKET_SEND_BINARY   : (u64 twSocketIx, i32 nOffset, i32 nLen)       -> 0/1
+//     SOCKET_CLOSE         : (u64 twSocketIx, i32 wCode, i32 nReasonOffset, i32 nReasonLen) -> 0/1
+//     SOCKET_STATE         : (u64 twSocketIx)                              -> eSNEEZE_ABI_SOCKET_STATE
+//     SOCKET_BUFFERED      : (u64 twSocketIx)                              -> i64 bytes
+//     SOCKET_PROTOCOL      : (u64 twSocketIx, i32 nOutOffset, i32 nOutLen) -> size
+//     SOCKET_URL           : (u64 twSocketIx, i32 nOutOffset, i32 nOutLen) -> size
+//     SOCKET_RECV          : (u64 twSocketIx, i32 nOutOffset, i32 nOutLen) -> size
+//     SOCKET_ERROR         : (u64 twSocketIx, i32 nOutOffset, i32 nOutLen) -> size
+//     SOCKET_FREE          : (u64 twSocketIx)                              -> 0/1
+//   NETWORK / SOCKET Notify (host -> guest):
+//     SOCKET_OPENED        : (u64 twFabricIx, u64 twSocketIx, u64 0, u64 0)
+//     SOCKET_RECEIVED      : (u64 twFabricIx, u64 twSocketIx, u64 bBinary, u64 nSize)
+//     SOCKET_FAILED        : (u64 twFabricIx, u64 twSocketIx, u64 0, u64 0)
+//     SOCKET_CLOSED        : (u64 twFabricIx, u64 twSocketIx, u64 wCode, u64 bClean)
+//
 // Flat C API name reference (the ergonomic C binding, layered on Call by
 // sneeze.c): Console_Log/Debug/.../TimeLog; Storage_Has/Get/Set/Remove;
-// Data_Has/Get; Network_Fetch; Viewport_Position_Get/Set, Viewport_Rotation_Get/Set;
+// Data_Has/Get; Network_Request_Open/Header_Set/Timeout_Set/Send/Abort/Close/State/
+// Status/Status_Text/Url/Header/Headers/Body/Size/Content_Type/Error/Is_Cached and
+// Network_Socket_Open/Send_Text/Send_Binary/Close/State/Buffered/Protocol/Url/Recv/
+// Error/Free; Viewport_Position_Get/Set, Viewport_Rotation_Get/Set;
 // Fabric_Node_Map_Service/Map_Service_Ex/Map_Data/Root/Open/Close (the node-tree
 // API); Scene_Node_Root/Map_Data/Open/Close (DEPRECATED), Scene_Ambient_Get/Set,
 // Scene_Directional_Get/Set, Scene_Background_Get/Set; Services_Has/Get; Node_Position/

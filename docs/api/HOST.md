@@ -176,6 +176,27 @@ pHost.Timer ().Interval (1, eSNEEZE_ABI_TIMER_UNIT::kSNEEZE_ABI_TIMER_UNIT_HZ, 0
 
 - **See also:** [`TIMER`](TIMER.md), [`INSTANCE::Timer`](INSTANCE.md#timer).
 
+### Network
+
+```rust
+pub fn Network (&self) -> NETWORK
+```
+
+- **Parameters:** none.
+- **Returns:** the [`NETWORK`](NETWORK.md) view.
+- **Description:** Open an HTTP exchange as a [`REQUEST`](REQUEST.md), whose answer arrives at [`INSTANCE::Request`](INSTANCE.md#request), or a WebSocket connection as a [`SOCKET`](SOCKET.md), which reports through four callbacks. Request URLs resolve against the fabric's own URL and a `GET` is cached while other verbs are not; socket URLs must be absolute.
+- **Example:**
+
+```rust
+let pRequest = pHost.Network ().Request_Open (eSNEEZE_ABI_REQUEST_VERB::kSNEEZE_ABI_REQUEST_VERB_GET, "api/state");
+
+pRequest.Send ();
+
+let pSocket = pHost.Network ().Socket_Open ("wss://example.com/chat");
+```
+
+- **See also:** [`NETWORK`](NETWORK.md), [`REQUEST`](REQUEST.md), [`SOCKET`](SOCKET.md), [`INSTANCE::Request`](INSTANCE.md#request).
+
 ## Snapshot views
 
 Beyond the live subsystems above, `HOST` also exposes the fabric's *immutable* configuration - the [Open snapshot](SNAPSHOT.md) the engine pushed at `Open`. The SDK parses that snapshot once, privately; a module never sees the raw JSON. Each accessor below returns a read-only, typed view of one section. `Resource`/`Signature`/`Agent`/`Container` and the `Modules` list borrow directly from the parsed snapshot (no copy, no boundary crossing); `Location` is computed on demand from the resource reference. (Declared *services* are **not** in the snapshot - they are served on demand through the [`Services`](#services) subsystem above.)

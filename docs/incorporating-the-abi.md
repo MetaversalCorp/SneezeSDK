@@ -20,7 +20,7 @@ WebAssembly links imports and exports by name, so the ABI is deliberately tiny a
 |--------|-----------|---------|
 | `Alloc` | `(i32 nSize) -> i32 nOffset` | Host asks the guest to reserve memory, then writes bytes into it. |
 | `Free` | `(i32 nOffset, i32 nSize)` | Release a block from `Alloc`. |
-| `Notify` | `(i32 nOffset, i32 nSize) -> i64` | Host -> guest event delivery (first user: the `TIMER_FIRED` callback). |
+| `Notify` | `(i32 nOffset, i32 nSize) -> i64` | Host -> guest event delivery (`TIMER_FIRED` when a timer fires, `NETWORK_REQUEST_COMPLETED` when a request finishes, `NETWORK_SOCKET_OPENED`/`RECEIVED`/`FAILED`/`CLOSED` as a socket reports). |
 | `Init` | `()` | Module loaded. |
 | `Open` | `(i64 twFabricIx, i32 nOffset, i32 nSize)` | A fabric opened. `twFabricIx` is the fabric handle; the immutable snapshot blob is at `(nOffset, nSize)` in your memory. |
 | `Close` | `(i64 twFabricIx)` | A fabric closed. |
@@ -114,7 +114,7 @@ The `instance!` macro emits all seven exports for you and routes them to your `I
 
 ### Any other language
 
-SDKs ship for C, C++, and Rust; for a language without one yet, you implement the ABI directly. The recipe is the same everywhere; only the syntax differs. The tiers in which the SDK is expected to fan out are, roughly: Rust / C-C++ / Zig first; Go-TinyGo / AssemblyScript / C#(.NET) next; Python / JS-TS last.
+SDKs ship for Rust, C, C++, AssemblyScript, and C#; for a language without one yet, you implement the ABI directly. The recipe is the same everywhere; only the syntax differs. The remaining languages the SDK is expected to fan out to are, roughly: Zig and Go-TinyGo next; Python / JS-TS last.
 
 To bring up a new language you must:
 

@@ -12,15 +12,16 @@ HOST (the root handle for one open fabric)
 - Storage ()     -> STORAGE      persistent JSON, per scope
 - Data ()        -> DATA         the fabric's read-only config "Data" tree
 - Services ()    -> SERVICES     the fabric's declared services, by name
+- Network ()     -> NETWORK      HTTP requests and WebSockets
 - Fabric ()      -> FABRIC       build the node tree (or attach a map service)
 - Chrono ()      -> CHRONO       the wall clock (and the MOMENT calendar value)
 - Performance () -> PERFORMANCE  the monotonic clock, for elapsed timing
 - Timer ()       -> TIMER        one-shot / repeating scheduled callbacks
 ```
 
-The subsystem objects (`CONSOLE`, `STORAGE`, `DATA`, `SERVICES`, `FABRIC`, `CHRONO`, `PERFORMANCE`, `TIMER`) are **zero-cost views**: each is just the fabric index in a typed wrapper. Calling `Console ()` allocates nothing; it hands back a handle that knows which fabric it belongs to. This is why there is one `Console_Log` and not a `Host_Console` round-trip - the fabric handle *is* the routing key.
+The subsystem objects (`CONSOLE`, `STORAGE`, `DATA`, `SERVICES`, `NETWORK`, `FABRIC`, `CHRONO`, `PERFORMANCE`, `TIMER`) are **zero-cost views**: each is just the fabric index in a typed wrapper. Calling `Console ()` allocates nothing; it hands back a handle that knows which fabric it belongs to. This is why there is one `Console_Log` and not a `Host_Console` round-trip - the fabric handle *is* the routing key.
 
-There is exactly one of each subsystem per fabric (they are singletons), which is why they need no identifier beyond the fabric. Nodes are different: there are many per fabric, so a [`NODE`](NODE.md) carries its own object index and is mutated by that index.
+There is exactly one of each subsystem per fabric (they are singletons), which is why they need no identifier beyond the fabric. Three kinds of object are different, because there are many per fabric: a [`NODE`](NODE.md) carries its own object index and is mutated by that index, and a [`REQUEST`](REQUEST.md) or a [`SOCKET`](SOCKET.md) carries its own handle and is driven through it.
 
 ## The Open snapshot
 
@@ -54,7 +55,7 @@ Shutdown ()                    the module is unloading
 
 `Init` and `Shutdown` bracket the module's whole life. Each `Open`/`Close` pair brackets one fabric. Because one instance can hold several fabrics open at once, never assume `Open` and `Close` are one-to-one in time - key any per-fabric state by `HOST::Index ()` (the `HOST*` you are given is itself stable per fabric, so it also serves as a key).
 
-Beyond these four, the engine can also call your instance back *asynchronously* through [`INSTANCE::Timer`](INSTANCE.md#timer) when a [`TIMER`](TIMER.md) you armed fires. These callbacks arrive between `Open` and `Close` for the fabric that armed the timer.
+Beyond these four, the engine can also call your instance back *asynchronously*: through [`INSTANCE::Timer`](INSTANCE.md#timer) when a [`TIMER`](TIMER.md) you armed fires, through [`INSTANCE::Request`](INSTANCE.md#request) when a [`REQUEST`](REQUEST.md) you sent finishes, and through the four `Socket_*` hooks as a [`SOCKET`](SOCKET.md) connects, receives, fails, and closes. These callbacks arrive between `Open` and `Close` for the fabric that started the work.
 
 ## Time, timers, and the clock
 
@@ -77,17 +78,26 @@ After creation you mutate a live node through its `NODE` handle (`Position`, `Sc
 
 `FABRIC::Node_Map_Data (sPath)` is a shortcut: it asks the engine to build an entire node subtree directly from a path in the fabric's `Data` block, without you constructing each map object. Alternatively, [`FABRIC::Node_Map_Service`](FABRIC.md#node_map_service) hands the whole fabric to a browser-managed map service instead of building nodes by hand.
 
+## Reaching the network
+
+[`NETWORK`](NETWORK.md) opens two kinds of object, and which one you want depends on whether you are asking a question or holding a conversation.
+
+A [`REQUEST`](REQUEST.md) is one HTTP exchange, shaped like `XMLHttpRequest`. You open it, set headers, send it, and the answer arrives at [`INSTANCE::Request`](INSTANCE.md#request) rather than as a return value. Two things distinguish it from a bare HTTP client. URLs are resolved **against the fabric's own URL**, so `"api/state"` means the fabric's folder and a fabric can be mirrored without editing its module. And a `GET` runs through the engine's asset cache while every other verb bypasses it, matching how a browser treats non-`GET` as non-cacheable.
+
+A [`SOCKET`](SOCKET.md) is one WebSocket connection, shaped like `WebSocket`. It reports through four callbacks as it connects, receives, fails, and closes. A socket URL is the one thing `NETWORK` does *not* resolve against the fabric - it must be an absolute `ws://` or `wss://` URL, which is the rule the browser applies too.
+
+Unlike the singleton subsystem views, both are handles you own. [`REQUEST::Close`](REQUEST.md#close) is the mirror of `Request_Open`, and [`SOCKET::Free`](SOCKET.md#free) is the mirror of `Socket_Open` - skip either and the host holds the state for the fabric's life.
+
 ## Unimplemented subsystems
 
 The ABI reserves numbers for subsystems and methods that are declared but not yet implemented in the engine: 
-1. `NETWORK` (fetch)
+1. `NETWORK`'s `REQUEST_PROGRESS` event
 2. `VIEWPORT` (camera get/set)
 3. `SCENE` global-lighting and background methods
-4. `NODE::Rotation`
    
 These appear in `sneeze_abi.h` marked "not implemented yet" and have no SDK wrapper - do not rely on them until they land.
 
-Event delivery through `Notify` is live: it carries [`TIMER`](TIMER.md) fires today, dispatched to [`INSTANCE::Timer`](INSTANCE.md#timer). Other event kinds (node events, for example) are still reserved; a `Notify` packet a module has no hook for is simply ignored, so old modules stay forward-compatible as new event kinds land.
+Event delivery through `Notify` is live: it carries [`TIMER`](TIMER.md) fires, dispatched to [`INSTANCE::Timer`](INSTANCE.md#timer), and finished requests, dispatched to [`INSTANCE::Request`](INSTANCE.md#request). Other event kinds (node events, for example) are still reserved; a `Notify` packet a module has no hook for is simply ignored, so old modules stay forward-compatible as new event kinds land.
 
 ## See also
 

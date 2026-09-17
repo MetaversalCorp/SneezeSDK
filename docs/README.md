@@ -26,6 +26,9 @@ Subsystems (reached through `HOST`):
 - [STORAGE](api/STORAGE.md) - persistent, per-scope JSON document storage.
 - [DATA](api/DATA.md) - the fabric's read-only configuration data tree.
 - [SERVICES](api/SERVICES.md) - the fabric's declared services, served on demand by name.
+- [NETWORK](api/NETWORK.md) - HTTP requests and WebSockets, URL resolution, and caching.
+- [REQUEST](api/REQUEST.md) - one HTTP exchange (an `XMLHttpRequest` analog).
+- [SOCKET](api/SOCKET.md) - one WebSocket connection (a `WebSocket` analog).
 - [FABRIC](api/FABRIC.md) - node-tree construction (and map-service attach).
 - [NODE](api/NODE.md) - per-node property mutation.
 
