@@ -242,13 +242,53 @@ fn Socket_Closed (pHost: &HOST, pSocket: SOCKET, wCode: i32, bClean: bool)
 
 - **See also:** [`SOCKET::Close`](SOCKET.md#close), [`SOCKET::Free`](SOCKET.md#free).
 
+### Io_Opened
+
+```rust
+fn Io_Opened (pHost: &HOST, pIo: IO) {}
+```
+
+- **Description:** Called when a Socket.IO handshake succeeds. First moment you may emit. See [`IO`](IO.md).
+
+### Io_Received
+
+```rust
+fn Io_Received (pHost: &HOST, pIo: IO, bBinary: bool, nSize: i64) {}
+```
+
+- **Description:** An event is waiting (`onAny`). Take the name with [`Recv_Event`](IO.md) then the payload with [`Recv`](IO.md) / [`Recv_Text`](IO.md).
+
+### Io_Failed
+
+```rust
+fn Io_Failed (pHost: &HOST, pIo: IO) {}
+```
+
+- **Description:** The connection failed. Always followed by [`Io_Closed`](#io_closed) with code `1006`. Read [`Error`](IO.md).
+
+### Io_Closed
+
+```rust
+fn Io_Closed (pHost: &HOST, pIo: IO, wCode: i32, bClean: bool) {}
+```
+
+- **Description:** The connection is finished. Free the handle here.
+
+### Io_Acked
+
+```rust
+fn Io_Acked (pHost: &HOST, pIo: IO, qwParam: u64, nSize: i64) {}
+```
+
+- **Description:** The server acked one `Emit_*_Ex`. `qwParam` is the cookie from that emit. Take the payload with [`Recv_Ack`](IO.md) / [`Recv_Ack_Text`](IO.md).
+
 ## The instance! macro
 
 ```rust
 sneeze::instance! (MY_MODULE);
 ```
 
-Place this once, at module scope, passing the type that implements `INSTANCE`. It generates the seven raw ABI exports the engine looks up by name - `Init`, `Open`, `Close`, `Shutdown`, `Alloc`, `Free`, `Notify` - and routes each to your implementation (or to the SDK's own memory management, for `Alloc`/`Free`). The generated `Notify` decodes each host event and dispatches it to the matching hook - a timer fire to [`Timer`](#timer), a finished request to [`Request`](#request), a socket event to one of the four `Socket_*` hooks; an event with no hook is ignored. You never write those exports yourself.
+Place this once, at module scope, passing the type that implements `INSTANCE`. It generates the seven raw ABI exports the engine looks up by name - `Init`, `Open`, `Close`, `Shutdown`, `Alloc`, `Free`, `Notify` - and routes each to your implementation (or to the SDK's own memory management, for `Alloc`/`Free`). The generated `Notify` decodes each host event and dispatches it to the matching hook - a timer fire to [`Timer`](#timer), a finished request to [`Request`](#request), a socket event to one of the four `Socket_*` hooks, an IO event to one of the five `Io_*` hooks; an event with no hook is ignored. You never write those exports yourself.
 
 - **Description:** Without this macro the engine cannot find your module's entry points, because it resolves them as named WASM exports. The macro is the one required piece of boilerplate.
 - **Example:**

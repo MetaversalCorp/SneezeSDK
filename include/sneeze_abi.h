@@ -62,19 +62,20 @@ extern "C" {
 
 // ---------------------------------------------------------------------------
 // Handles. HNODE is a 64-bit value handle (an object index - not a pointer,
-// since it exceeds a wasm32 pointer). HREQUEST and HSOCKET are likewise 64-bit
-// value handles - the twRequestIx that NETWORK's REQUEST_OPEN returns and the
-// twSocketIx that SOCKET_OPEN returns, by which every other method of each is
-// addressed. HMAPOBJECT is an opaque pointer to a guest-local builder. The
-// fabric itself is reached through a guest-SDK HOST handle (see the language
-// SDKs), which carries the u64 fabric index the wire formats below call
-// twFabricIx. C gives these no type safety (bare integers); the Rust SDK wraps
-// them in newtypes.
+// since it exceeds a wasm32 pointer). HREQUEST, HSOCKET and HIO are likewise
+// 64-bit value handles - the twRequestIx that NETWORK's REQUEST_OPEN returns,
+// the twSocketIx that SOCKET_OPEN returns, and the twIoIx that IO_OPEN returns,
+// by which every other method of each is addressed. HMAPOBJECT is an opaque
+// pointer to a guest-local builder. The fabric itself is reached through a
+// guest-SDK HOST handle (see the language SDKs), which carries the u64 fabric
+// index the wire formats below call twFabricIx. C gives these no type safety
+// (bare integers); the Rust SDK wraps them in newtypes.
 // ---------------------------------------------------------------------------
 
 typedef uint64_t   HNODE;
 typedef uint64_t   HREQUEST;
 typedef uint64_t   HSOCKET;
+typedef uint64_t   HIO;
 typedef uint32_t   HMAPOBJECT;
 
 // ---------------------------------------------------------------------------
@@ -164,13 +165,14 @@ enum eSNEEZE_ABI_METHOD_STORAGE
    kSNEEZE_ABI_METHOD_STORAGE_REMOVE                     =  4,
 };
 
-// NETWORK is the guest's request and socket API, modeled on the browser's - one
-// request object with a verb, and one WebSocket. It is deliberately laid out as
-// two contiguous blocks with reserve space after each, so a method we did not
-// think of can land beside its relatives instead of at the end of the enum:
+// NETWORK is the guest's request, socket, and Socket.IO API. It is deliberately
+// laid out as three contiguous blocks with reserve space after each, so a method
+// we did not think of can land beside its relatives instead of at the end of the
+// enum:
 //
 //   1-29   REQUEST - an XHR-shaped HTTP request
 //   30-59  SOCKET  - a browser-shaped WebSocket
+//   60-89  IO      - a Socket.IO connection (host runs socket.io-client)
 //
 // A GET runs through the engine's cache exactly as an asset fetch does, so two
 // guests asking for one URL share a single fetch. Every other verb is fetched
@@ -219,6 +221,27 @@ enum eSNEEZE_ABI_METHOD_NETWORK
    kSNEEZE_ABI_METHOD_NETWORK_SOCKET_CLOSED              = 43,   // Notify: (twFabricIx, twSocketIx, wCode, bClean)
    kSNEEZE_ABI_METHOD_NETWORK_SOCKET_FREE                = 44,   // retires the handle (CLOSE only closes the connection)
                                                                  // 45-59 reserved for SOCKET
+
+   kSNEEZE_ABI_METHOD_NETWORK_IO_OPEN                    = 60,   // (url) -> twIoIx
+   kSNEEZE_ABI_METHOD_NETWORK_IO_EMIT_TEXT               = 61,   // emit event + UTF-8 text (no ack)
+   kSNEEZE_ABI_METHOD_NETWORK_IO_EMIT_BINARY             = 62,   // emit event + bytes (no ack)
+   kSNEEZE_ABI_METHOD_NETWORK_IO_EMIT_TEXT_EX            = 63,   // emit event + UTF-8 text, ack with qwParam
+   kSNEEZE_ABI_METHOD_NETWORK_IO_EMIT_BINARY_EX          = 64,   // emit event + bytes, ack with qwParam
+   kSNEEZE_ABI_METHOD_NETWORK_IO_CLOSE                   = 65,   // Socket.IO disconnect; handle stays readable
+   kSNEEZE_ABI_METHOD_NETWORK_IO_STATE                   = 66,   // -> eSNEEZE_ABI_IO_STATE
+   kSNEEZE_ABI_METHOD_NETWORK_IO_BUFFERED                = 67,   // -> bytes queued but unsent
+   kSNEEZE_ABI_METHOD_NETWORK_IO_URL                     = 68,   // -> the connection's URL
+   kSNEEZE_ABI_METHOD_NETWORK_IO_RECV_EVENT              = 69,   // -> event name of event-queue head (does not pop)
+   kSNEEZE_ABI_METHOD_NETWORK_IO_RECV                    = 70,   // -> pops event-queue payload
+   kSNEEZE_ABI_METHOD_NETWORK_IO_RECV_ACK                = 71,   // -> pops ack-queue payload
+   kSNEEZE_ABI_METHOD_NETWORK_IO_ERROR                   = 72,   // -> last error text
+   kSNEEZE_ABI_METHOD_NETWORK_IO_OPENED                  = 73,   // Notify: (twFabricIx, twIoIx, 0, 0)
+   kSNEEZE_ABI_METHOD_NETWORK_IO_RECEIVED                = 74,   // Notify: (twFabricIx, twIoIx, bBinary, nSize)
+   kSNEEZE_ABI_METHOD_NETWORK_IO_FAILED                  = 75,   // Notify: (twFabricIx, twIoIx, 0, 0)
+   kSNEEZE_ABI_METHOD_NETWORK_IO_CLOSED                  = 76,   // Notify: (twFabricIx, twIoIx, wCode, bClean)
+   kSNEEZE_ABI_METHOD_NETWORK_IO_ACKED                   = 77,   // Notify: (twFabricIx, twIoIx, qwParam, nSize)
+   kSNEEZE_ABI_METHOD_NETWORK_IO_FREE                    = 78,   // retires the handle (CLOSE only disconnects)
+                                                                 // 79-89 reserved for IO
 };
 
 enum eSNEEZE_ABI_METHOD_VIEWPORT
@@ -387,6 +410,17 @@ enum eSNEEZE_ABI_SOCKET_STATE
    kSNEEZE_ABI_SOCKET_STATE_OPEN                         =  1,
    kSNEEZE_ABI_SOCKET_STATE_CLOSING                      =  2,
    kSNEEZE_ABI_SOCKET_STATE_CLOSED                       =  3,
+};
+
+// IO_STATE uses the same four values as SOCKET_STATE. A Socket.IO connection
+// still connects, opens, closes, and ends; the names stay parallel so a guest
+// that already branches on SOCKET_STATE can read IO_STATE the same way.
+enum eSNEEZE_ABI_IO_STATE
+{
+   kSNEEZE_ABI_IO_STATE_CONNECTING                       =  0,
+   kSNEEZE_ABI_IO_STATE_OPEN                             =  1,
+   kSNEEZE_ABI_IO_STATE_CLOSING                          =  2,
+   kSNEEZE_ABI_IO_STATE_CLOSED                           =  3,
 };
 
 // CHRONO zone selector: how SET interprets its civil input, and which cached
@@ -686,6 +720,37 @@ SNEEZE_ABI_MOMENT, *PSNEEZE_ABI_MOMENT;
 //     SOCKET_RECEIVED      : (u64 twFabricIx, u64 twSocketIx, u64 bBinary, u64 nSize)
 //     SOCKET_FAILED        : (u64 twFabricIx, u64 twSocketIx, u64 0, u64 0)
 //     SOCKET_CLOSED        : (u64 twFabricIx, u64 twSocketIx, u64 wCode, u64 bClean)
+//
+//   NETWORK / IO. A Socket.IO connection. The host runs official socket.io-client;
+//   the guest sees a handle, two queues (events and acks), and five Notify hooks.
+//   The URL must be an absolute http:// or https:// URL (the host may also accept
+//   ws:// or wss://). It is not resolved against the fabric.
+//
+//   EMIT_TEXT / EMIT_BINARY are fire-and-forget. The _Ex forms request an ack and
+//   echo qwParam on IO_ACKED (0 is a valid cookie). RECV_EVENT reads the event
+//   name of the event-queue head without popping; RECV pops that payload.
+//   RECV_ACK pops the ack-queue payload after IO_ACKED. CLOSE disconnects and
+//   leaves the handle readable; FREE retires the handle.
+//     IO_OPEN              : (u64 twFabricIx, i32 nUrlOffset, i32 nUrlLen) -> u64 twIoIx  (0 = failure)
+//     IO_EMIT_TEXT         : (u64 twIoIx, i32 nEventOffset, i32 nEventLen, i32 nOffset, i32 nLen) -> 0/1
+//     IO_EMIT_BINARY       : (u64 twIoIx, i32 nEventOffset, i32 nEventLen, i32 nOffset, i32 nLen) -> 0/1
+//     IO_EMIT_TEXT_EX      : (u64 twIoIx, i32 nEventOffset, i32 nEventLen, i32 nOffset, i32 nLen, u64 qwParam) -> 0/1
+//     IO_EMIT_BINARY_EX    : (u64 twIoIx, i32 nEventOffset, i32 nEventLen, i32 nOffset, i32 nLen, u64 qwParam) -> 0/1
+//     IO_CLOSE             : (u64 twIoIx)                                  -> 0/1
+//     IO_STATE             : (u64 twIoIx)                                  -> eSNEEZE_ABI_IO_STATE
+//     IO_BUFFERED          : (u64 twIoIx)                                  -> i64 bytes
+//     IO_URL               : (u64 twIoIx, i32 nOutOffset, i32 nOutLen)     -> size
+//     IO_RECV_EVENT        : (u64 twIoIx, i32 nOutOffset, i32 nOutLen)     -> size
+//     IO_RECV              : (u64 twIoIx, i32 nOutOffset, i32 nOutLen)     -> size
+//     IO_RECV_ACK          : (u64 twIoIx, i32 nOutOffset, i32 nOutLen)     -> size
+//     IO_ERROR             : (u64 twIoIx, i32 nOutOffset, i32 nOutLen)     -> size
+//     IO_FREE              : (u64 twIoIx)                                  -> 0/1
+//   NETWORK / IO Notify (host -> guest):
+//     IO_OPENED            : (u64 twFabricIx, u64 twIoIx, u64 0, u64 0)
+//     IO_RECEIVED          : (u64 twFabricIx, u64 twIoIx, u64 bBinary, u64 nSize)
+//     IO_FAILED            : (u64 twFabricIx, u64 twIoIx, u64 0, u64 0)
+//     IO_CLOSED            : (u64 twFabricIx, u64 twIoIx, u64 wCode, u64 bClean)
+//     IO_ACKED             : (u64 twFabricIx, u64 twIoIx, u64 qwParam, u64 nSize)
 //
 // Flat C API name reference (the ergonomic C binding, layered on Call by
 // sneeze.c): Console_Log/Debug/.../TimeLog; Storage_Has/Get/Set/Remove;

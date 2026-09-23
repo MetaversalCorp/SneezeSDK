@@ -20,7 +20,7 @@ WebAssembly links imports and exports by name, so the ABI is deliberately tiny a
 |--------|-----------|---------|
 | `Alloc` | `(i32 nSize) -> i32 nOffset` | Host asks the guest to reserve memory, then writes bytes into it. |
 | `Free` | `(i32 nOffset, i32 nSize)` | Release a block from `Alloc`. |
-| `Notify` | `(i32 nOffset, i32 nSize) -> i64` | Host -> guest event delivery (`TIMER_FIRED` when a timer fires, `NETWORK_REQUEST_COMPLETED` when a request finishes, `NETWORK_SOCKET_OPENED`/`RECEIVED`/`FAILED`/`CLOSED` as a socket reports). |
+| `Notify` | `(i32 nOffset, i32 nSize) -> i64` | Host -> guest event delivery (`TIMER_FIRED` when a timer fires, `NETWORK_REQUEST_COMPLETED` when a request finishes, `NETWORK_SOCKET_*` as a socket reports, `NETWORK_IO_*` as a Socket.IO connection reports). |
 | `Init` | `()` | Module loaded. |
 | `Open` | `(i64 twFabricIx, i32 nOffset, i32 nSize)` | A fabric opened. `twFabricIx` is the fabric handle; the immutable snapshot blob is at `(nOffset, nSize)` in your memory. |
 | `Close` | `(i64 twFabricIx)` | A fabric closed. |

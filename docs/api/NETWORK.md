@@ -1,6 +1,6 @@
 # NETWORK
 
-The fabric's window onto the network, reached through [`HOST::Network`](HOST.md#network). It is a zero-cost view over the fabric handle, and its job is to open two kinds of object: [`REQUEST`](REQUEST.md), one per HTTP exchange, shaped like the browser's `XMLHttpRequest`; and [`SOCKET`](SOCKET.md), one per WebSocket connection, shaped like the browser's `WebSocket`.
+The fabric's window onto the network, reached through [`HOST::Network`](HOST.md#network). It is a zero-cost view over the fabric handle, and its job is to open three kinds of object: [`REQUEST`](REQUEST.md), one per HTTP exchange, shaped like the browser's `XMLHttpRequest`; [`SOCKET`](SOCKET.md), one per WebSocket connection, shaped like the browser's `WebSocket`; and [`IO`](IO.md), one Socket.IO connection, whose client lives in the host.
 
 `NETWORK` itself has no state and no other behaviour. Everything you do with an exchange or a connection happens on the handle it gives you back.
 
@@ -114,9 +114,32 @@ let pSocket = pHost.Network ().Socket_Open_Ex ("wss://example.com/chat", "chat.v
 
 - **See also:** [`Socket_Open`](#socket_open), [`SOCKET::Protocol`](SOCKET.md#protocol).
 
+### Io_Open
+
+```rust
+pub fn Io_Open (&self, sUrl: &str) -> IO
+```
+
+- **Parameters:**
+  - `sUrl` - an **absolute** `http://` or `https://` URL (the host may also accept `ws://` or `wss://`).
+- **Returns:** an [`IO`](IO.md) handle. Check [`IsValid`](IO.md): it is invalid if the host refused the open, which happens when the URL is empty or the fabric is no longer live.
+- **Description:** Opens one Socket.IO connection. The host runs official `socket.io-client`. The handshake is asynchronous, so the handle comes back `CONNECTING` and you wait for [`INSTANCE::Io_Opened`](INSTANCE.md#io_opened) before emitting. The mirror of this call is [`IO::Free`](IO.md).
+- **Example:**
+
+```rust
+fn Open (pHost: &HOST)
+{
+   let pIo = pHost.Network ().Io_Open ("https://example.com");
+
+   let _ = pIo;
+}
+```
+
+- **See also:** [`IO`](IO.md), [`INSTANCE::Io_Opened`](INSTANCE.md#io_opened).
+
 ## Socket URLs are *not* relative
 
-This is the one place the two halves of `NETWORK` deliberately disagree. A request URL is resolved against the fabric (above); a socket URL is **not** - it must be absolute, with a `ws://` or `wss://` scheme. That is the rule the browser's `WebSocket` constructor applies, and following it means a socket URL means the same thing in a Sneeze module as it does on the web.
+This is the one place request URLs and conversation URLs deliberately disagree. A request URL is resolved against the fabric (above); a socket URL is **not** - it must be absolute, with a `ws://` or `wss://` scheme. An IO URL is likewise absolute (`http://` or `https://`) and is not resolved.
 
 ## The verb
 
@@ -142,8 +165,10 @@ A single WebSocket frame is capped at **16 MB** in either direction. A conversat
 ## See also
 
 - [`REQUEST`](REQUEST.md) - the exchange this view opens, and every method for reading the answer.
-- [`SOCKET`](SOCKET.md) - the connection this view opens, and every method for driving it.
+- [`SOCKET`](SOCKET.md) - the WebSocket connection this view opens.
+- [`IO`](IO.md) - the Socket.IO connection this view opens.
 - [`INSTANCE::Request`](INSTANCE.md#request) - the callback a finished exchange is delivered to.
 - [`INSTANCE::Socket_Opened`](INSTANCE.md#socket_opened) - and the three sibling socket callbacks.
+- [`INSTANCE::Io_Opened`](INSTANCE.md#io_opened) - and the four sibling IO callbacks.
 - [`HOST::Network`](HOST.md#network) - where this view comes from.
 - [API overview](overview.md).

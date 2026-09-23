@@ -184,7 +184,7 @@ pub fn Network (&self) -> NETWORK
 
 - **Parameters:** none.
 - **Returns:** the [`NETWORK`](NETWORK.md) view.
-- **Description:** Open an HTTP exchange as a [`REQUEST`](REQUEST.md), whose answer arrives at [`INSTANCE::Request`](INSTANCE.md#request), or a WebSocket connection as a [`SOCKET`](SOCKET.md), which reports through four callbacks. Request URLs resolve against the fabric's own URL and a `GET` is cached while other verbs are not; socket URLs must be absolute.
+- **Description:** Open an HTTP exchange as a [`REQUEST`](REQUEST.md), whose answer arrives at [`INSTANCE::Request`](INSTANCE.md#request); a WebSocket connection as a [`SOCKET`](SOCKET.md); or a Socket.IO connection as an [`IO`](IO.md). Request URLs resolve against the fabric's own URL and a `GET` is cached while other verbs are not; socket and IO URLs must be absolute.
 - **Example:**
 
 ```rust
@@ -195,7 +195,7 @@ pRequest.Send ();
 let pSocket = pHost.Network ().Socket_Open ("wss://example.com/chat");
 ```
 
-- **See also:** [`NETWORK`](NETWORK.md), [`REQUEST`](REQUEST.md), [`SOCKET`](SOCKET.md), [`INSTANCE::Request`](INSTANCE.md#request).
+- **See also:** [`NETWORK`](NETWORK.md), [`REQUEST`](REQUEST.md), [`SOCKET`](SOCKET.md), [`IO`](IO.md), [`INSTANCE::Request`](INSTANCE.md#request).
 
 ## Snapshot views
 

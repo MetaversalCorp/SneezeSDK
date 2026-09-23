@@ -80,13 +80,15 @@ After creation you mutate a live node through its `NODE` handle (`Position`, `Sc
 
 ## Reaching the network
 
-[`NETWORK`](NETWORK.md) opens two kinds of object, and which one you want depends on whether you are asking a question or holding a conversation.
+[`NETWORK`](NETWORK.md) opens three kinds of object, and which one you want depends on whether you are asking a question, holding a WebSocket conversation, or speaking Socket.IO.
 
 A [`REQUEST`](REQUEST.md) is one HTTP exchange, shaped like `XMLHttpRequest`. You open it, set headers, send it, and the answer arrives at [`INSTANCE::Request`](INSTANCE.md#request) rather than as a return value. Two things distinguish it from a bare HTTP client. URLs are resolved **against the fabric's own URL**, so `"api/state"` means the fabric's folder and a fabric can be mirrored without editing its module. And a `GET` runs through the engine's asset cache while every other verb bypasses it, matching how a browser treats non-`GET` as non-cacheable.
 
-A [`SOCKET`](SOCKET.md) is one WebSocket connection, shaped like `WebSocket`. It reports through four callbacks as it connects, receives, fails, and closes. A socket URL is the one thing `NETWORK` does *not* resolve against the fabric - it must be an absolute `ws://` or `wss://` URL, which is the rule the browser applies too.
+A [`SOCKET`](SOCKET.md) is one WebSocket connection, shaped like `WebSocket`. It reports through four callbacks as it connects, receives, fails, and closes. A socket URL is not resolved against the fabric - it must be an absolute `ws://` or `wss://` URL, which is the rule the browser applies too.
 
-Unlike the singleton subsystem views, both are handles you own. [`REQUEST::Close`](REQUEST.md#close) is the mirror of `Request_Open`, and [`SOCKET::Free`](SOCKET.md#free) is the mirror of `Socket_Open` - skip either and the host holds the state for the fabric's life.
+An [`IO`](IO.md) is one Socket.IO connection. The host runs official `socket.io-client`; the guest emits named events, drains an event queue and an ack queue, and hears five callbacks. An IO URL is also absolute (`http://` or `https://`) and is not resolved against the fabric.
+
+Unlike the singleton subsystem views, these are handles you own. [`REQUEST::Close`](REQUEST.md#close) is the mirror of `Request_Open`, [`SOCKET::Free`](SOCKET.md#free) is the mirror of `Socket_Open`, and [`IO::Free`](IO.md) is the mirror of `Io_Open` - skip any and the host holds the state for the fabric's life.
 
 ## Unimplemented subsystems
 
@@ -94,6 +96,7 @@ The ABI reserves numbers for subsystems and methods that are declared but not ye
 1. `NETWORK`'s `REQUEST_PROGRESS` event
 2. `VIEWPORT` (camera get/set)
 3. `SCENE` global-lighting and background methods
+4. `NETWORK`'s `IO` methods — SDK wrappers exist; the host `socket.io-client` lives in the engine, not this repository
    
 These appear in `sneeze_abi.h` marked "not implemented yet" and have no SDK wrapper - do not rely on them until they land.
 
