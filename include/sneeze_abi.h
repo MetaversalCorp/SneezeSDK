@@ -60,6 +60,11 @@ extern "C" {
 
 #define SNEEZE_ABI_VERSION      1
 
+// REMOVE THIS -- temporary digit-key Notify (VIEWPORT method 60).
+#ifndef TEMPORARY_DIGIT_KEYS
+#define TEMPORARY_DIGIT_KEYS
+#endif
+
 // ---------------------------------------------------------------------------
 // Handles. HNODE is a 64-bit value handle (an object index - not a pointer,
 // since it exceeds a wasm32 pointer). HREQUEST, HSOCKET and HIO are likewise
@@ -250,6 +255,9 @@ enum eSNEEZE_ABI_METHOD_VIEWPORT
    kSNEEZE_ABI_METHOD_VIEWPORT_POSITION_SET              =  2,        // not implemented yet (host new)
    kSNEEZE_ABI_METHOD_VIEWPORT_ROTATION_GET              =  3,        // not implemented yet (host new)
    kSNEEZE_ABI_METHOD_VIEWPORT_ROTATION_SET              =  4,        // not implemented yet (host new)
+#ifdef TEMPORARY_DIGIT_KEYS
+   kSNEEZE_ABI_METHOD_VIEWPORT_KEY                       = 60,       // TEMPORARY Notify: (twFabricIx, nDigit, 0, 0)
+#endif
 };
 
 enum eSNEEZE_ABI_METHOD_SCENE
@@ -604,6 +612,9 @@ SNEEZE_ABI_MOMENT, *PSNEEZE_ABI_MOMENT;
 //     TIME/TIME_END/TIME_LOG : (i32 nMsgOffset, i32 nMsgLen)
 //     ASSERT                 : (i32 bCondition, i32 nMsgOffset, i32 nMsgLen)
 //     GROUP_END              : (no further fields)
+//
+//   VIEWPORT Notify (TEMPORARY_DIGIT_KEYS, host -> guest):
+//     KEY : (u64 twFabricIx, u64 nDigit, u64 0, u64 0)   // nDigit 0..9
 //
 //   STORAGE (twFabricIx, i32 eScope, then...)
 //     HAS    : (i32 nPathOffset, i32 nPathLen)                        -> bool
