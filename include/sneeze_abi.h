@@ -255,6 +255,7 @@ enum eSNEEZE_ABI_METHOD_VIEWPORT
    kSNEEZE_ABI_METHOD_VIEWPORT_POSITION_SET              =  2,        // not implemented yet (host new)
    kSNEEZE_ABI_METHOD_VIEWPORT_ROTATION_GET              =  3,        // not implemented yet (host new)
    kSNEEZE_ABI_METHOD_VIEWPORT_ROTATION_SET              =  4,        // not implemented yet (host new)
+   kSNEEZE_ABI_METHOD_VIEWPORT_POINTER                   =  5,        // Notify: click. (twFabricIx, nIdBytes, UTF-8 id)
 #ifdef TEMPORARY_DIGIT_KEYS
    kSNEEZE_ABI_METHOD_VIEWPORT_KEY                       = 60,       // TEMPORARY Notify: (twFabricIx, nDigit, 0, 0)
 #endif
