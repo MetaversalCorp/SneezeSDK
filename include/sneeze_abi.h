@@ -255,6 +255,7 @@ enum eSNEEZE_ABI_METHOD_VIEWPORT
    kSNEEZE_ABI_METHOD_VIEWPORT_POSITION_SET              =  2,        // not implemented yet (host new)
    kSNEEZE_ABI_METHOD_VIEWPORT_ROTATION_GET              =  3,        // not implemented yet (host new)
    kSNEEZE_ABI_METHOD_VIEWPORT_ROTATION_SET              =  4,        // not implemented yet (host new)
+   kSNEEZE_ABI_METHOD_VIEWPORT_POINTER                   =  5,        // Notify: click. (twFabricIx, nIdBytes, UTF-8 id)
 #ifdef TEMPORARY_DIGIT_KEYS
    kSNEEZE_ABI_METHOD_VIEWPORT_KEY                       = 60,       // TEMPORARY Notify: (twFabricIx, nDigit, 0, 0)
 #endif
@@ -302,6 +303,7 @@ enum eSNEEZE_ABI_METHOD_NODE
    kSNEEZE_ABI_METHOD_NODE_NAME                          =  6,
    kSNEEZE_ABI_METHOD_NODE_RESOURCE                      =  7,
    kSNEEZE_ABI_METHOD_NODE_PANEL                         =  8,
+   kSNEEZE_ABI_METHOD_NODE_MODEL                         =  9,   // (u64 qwComposed, i32 nBytesOffset, i32 nBytesLen) glTF/GLB bytes
 };
 
 // CHRONO is the wall clock and the civil (calendar) logic for a MOMENT. The
@@ -652,6 +654,7 @@ SNEEZE_ABI_MOMENT, *PSNEEZE_ABI_MOMENT;
 //     NAME       : (i32 nNameOffset, i32 nNameLen)
 //     RESOURCE   : (i32 nUrlOffset, i32 nUrlLen)
 //     PANEL      : (i32 nRmlOffset, i32 nRmlLen)
+//     MODEL      : (i32 nBytesOffset, i32 nBytesLen)              glTF or GLB bytes, loaded as this node's mesh
 //
 //   CHRONO (u64 twFabricIx, then...)  host owns all civil logic; MOMENT is filled out
 //     TIME   : ()                                                    -> i64 tm (1/64 s, 1601, UTC)
