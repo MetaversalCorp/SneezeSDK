@@ -304,6 +304,14 @@ enum eSNEEZE_ABI_METHOD_NODE
    kSNEEZE_ABI_METHOD_NODE_RESOURCE                      =  7,
    kSNEEZE_ABI_METHOD_NODE_PANEL                         =  8,
    kSNEEZE_ABI_METHOD_NODE_MODEL                         =  9,   // (u64 qwComposed, i32 nBytesOffset, i32 nBytesLen) glTF/GLB bytes
+   kSNEEZE_ABI_METHOD_NODE_POSITION_GET                  = 10,   // (u64 qwComposed, i32 nOutOffset, i32 nOutLen) -> size  3 x f64
+   kSNEEZE_ABI_METHOD_NODE_ROTATION_GET                  = 11,   // (u64 qwComposed, i32 nOutOffset, i32 nOutLen) -> size  4 x f64
+   kSNEEZE_ABI_METHOD_NODE_SCALE_GET                     = 12,   // (u64 qwComposed, i32 nOutOffset, i32 nOutLen) -> size  1 x f64
+   kSNEEZE_ABI_METHOD_NODE_SCALE_AXES_GET                = 13,   // (u64 qwComposed, i32 nOutOffset, i32 nOutLen) -> size  3 x f64
+   kSNEEZE_ABI_METHOD_NODE_BOUND_GET                     = 14,   // (u64 qwComposed, i32 nOutOffset, i32 nOutLen) -> size  3 x f64
+   kSNEEZE_ABI_METHOD_NODE_NAME_GET                      = 15,   // (u64 qwComposed, i32 nOutOffset, i32 nOutLen) -> size  UTF-8
+   kSNEEZE_ABI_METHOD_NODE_RESOURCE_GET                  = 16,   // (u64 qwComposed, i32 nOutOffset, i32 nOutLen) -> size  UTF-8
+   kSNEEZE_ABI_METHOD_NODE_PANEL_GET                     = 17,   // (u64 qwComposed, i32 nOutOffset, i32 nOutLen) -> size  UTF-8
 };
 
 // CHRONO is the wall clock and the civil (calendar) logic for a MOMENT. The
@@ -655,6 +663,18 @@ SNEEZE_ABI_MOMENT, *PSNEEZE_ABI_MOMENT;
 //     RESOURCE   : (i32 nUrlOffset, i32 nUrlLen)
 //     PANEL      : (i32 nRmlOffset, i32 nRmlLen)
 //     MODEL      : (i32 nBytesOffset, i32 nBytesLen)              glTF or GLB bytes, loaded as this node's mesh
+//   NODE reads. Same out-buffer contract as DATA GET: Call returns the full
+//   byte size, writing min(size, nOutLen). nOutLen == 0 queries the size.
+//   A missing node returns 0. SCALE_GET is d3Scale[0] (the uniform factor
+//   Scale writes onto every axis). SCALE_AXES_GET is the stored vector.
+//     POSITION_GET   : (i32 nOutOffset, i32 nOutLen) -> size   3 x f64
+//     ROTATION_GET   : (i32 nOutOffset, i32 nOutLen) -> size   4 x f64 x,y,z,w
+//     SCALE_GET      : (i32 nOutOffset, i32 nOutLen) -> size   1 x f64
+//     SCALE_AXES_GET : (i32 nOutOffset, i32 nOutLen) -> size   3 x f64
+//     BOUND_GET      : (i32 nOutOffset, i32 nOutLen) -> size   3 x f64
+//     NAME_GET       : (i32 nOutOffset, i32 nOutLen) -> size   UTF-8
+//     RESOURCE_GET   : (i32 nOutOffset, i32 nOutLen) -> size   UTF-8 reference
+//     PANEL_GET      : (i32 nOutOffset, i32 nOutLen) -> size   UTF-8 RML source
 //
 //   CHRONO (u64 twFabricIx, then...)  host owns all civil logic; MOMENT is filled out
 //     TIME   : ()                                                    -> i64 tm (1/64 s, 1601, UTC)

@@ -1,6 +1,6 @@
 # NODE
 
-A live scene object, returned by the [`FABRIC`](FABRIC.md) create calls (`Node_Root`, `Node_Open`, `Node_Map_Data`). Where [`SNEEZE_ABI_MAPOBJECT`](MAPOBJECT.md) is the *template* used to create a node, `NODE` is the *live* object afterward: you mutate its properties through this handle. It carries the node's composed identity (class + object index) and routes mutations by it.
+A live scene object, returned by the [`FABRIC`](FABRIC.md) create calls (`Node_Root`, `Node_Open`, `Node_Map_Data`). Where [`SNEEZE_ABI_MAPOBJECT`](MAPOBJECT.md) is the *template* used to create a node, `NODE` is the *live* object afterward: you read and write its properties through this handle. It carries the node's composed identity (class + object index) and routes every call by it.
 
 ## Local reads (no host call)
 
@@ -185,3 +185,95 @@ pPanel.Panel ("<rml><body>Hello</body></rml>");
 ```
 
 - **See also:** [`SNEEZE_ABI_MAPOBJECT`](MAPOBJECT.md).
+
+## Property reads (host calls)
+
+Each read below is the same name as the write, with no arguments. C cannot overload, so its reads are `Node_Position_Get`, `Node_Name_Get`, and so on. A numeric read is `None` when the node is gone. A zero position is `Some`, because the host returns the three stored doubles. A string read is empty when that field was never set, or when the node is gone. C string reads are malloc'd (`NULL` in that same empty case); the caller frees them.
+
+`Scale ()` returns the X component of the stored scale. `Scale (dScale)` writes that one factor onto all three axes, so a uniform scale round-trips. `Scale_Axes ()` returns the stored vector.
+
+`Model` has no read. The write consumes the glTF or GLB bytes into the render model and does not keep them.
+
+### Position
+
+```rust
+pub fn Position (&self) -> Option<(f64, f64, f64)>
+```
+
+- **Parameters:** none.
+- **Returns:** the local position `(dX, dY, dZ)`, or `None` when the node is gone.
+- **Description:** Reads the position stored on the node, in the same Z-up frame [`Position`](#position) writes.
+- **Example:**
+
+```rust
+if let Some ((dX, dY, dZ)) = pNode.Position ()
+{
+   pHost.Console ().Log (&format!("{dX} {dY} {dZ}"));
+}
+```
+
+### Rotation
+
+```rust
+pub fn Rotation (&self) -> Option<(f64, f64, f64, f64)>
+```
+
+- **Parameters:** none.
+- **Returns:** the local rotation quaternion `(dX, dY, dZ, dW)`, or `None` when the node is gone.
+- **Description:** Reads the quaternion stored on the node.
+
+### Scale
+
+```rust
+pub fn Scale (&self) -> Option<f64>
+```
+
+- **Parameters:** none.
+- **Returns:** `d3Scale[0]`, or `None` when the node is gone.
+- **Description:** The uniform factor. Use Scale_Axes when the axes differ.
+
+### Scale_Axes
+
+```rust
+pub fn Scale_Axes (&self) -> Option<(f64, f64, f64)>
+```
+
+- **Parameters:** none.
+- **Returns:** the stored per-axis scale, or `None` when the node is gone.
+
+### Bound
+
+```rust
+pub fn Bound (&self) -> Option<(f64, f64, f64)>
+```
+
+- **Parameters:** none.
+- **Returns:** the stored bounding extents, or `None` when the node is gone.
+
+### Name
+
+```rust
+pub fn Name (&self) -> String
+```
+
+- **Parameters:** none.
+- **Returns:** the node's name as UTF-8. Empty when unset or the node is gone.
+- **Description:** Decoded from the object's UTF-16 name.
+
+### Resource
+
+```rust
+pub fn Resource (&self) -> String
+```
+
+- **Parameters:** none.
+- **Returns:** the stored resource reference. Empty when unset or the node is gone.
+
+### Panel
+
+```rust
+pub fn Panel (&self) -> String
+```
+
+- **Parameters:** none.
+- **Returns:** the stored RML+CSS source. Empty when unset or the node is gone.
