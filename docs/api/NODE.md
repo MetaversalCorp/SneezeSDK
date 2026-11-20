@@ -188,7 +188,7 @@ pPanel.Panel ("<rml><body>Hello</body></rml>");
 
 ## Property reads (host calls)
 
-Each read below is the same name as the write, with no arguments. C cannot overload, so its reads are `Node_Position_Get`, `Node_Name_Get`, and so on. A numeric read is `None` when the node is gone. A zero position is `Some`, because the host returns the three stored doubles. A string read is empty when that field was never set, or when the node is gone. C string reads are malloc'd (`NULL` in that same empty case); the caller frees them.
+C and Rust cannot overload, so their reads are `Position_Get` / `Node_Position_Get`. C++ overloads the write name and returns `bool` through out-pointers. A numeric read is `None` when the node is gone. A zero position is `Some`, because the host returns the three stored doubles. A string read is empty when that field was never set, or when the node is gone. C string reads are malloc'd (`NULL` in that same empty case); the caller frees them.
 
 `Scale ()` returns the X component of the stored scale. `Scale (dScale)` writes that one factor onto all three axes, so a uniform scale round-trips. `Scale_Axes ()` returns the stored vector.
 
@@ -197,7 +197,7 @@ Each read below is the same name as the write, with no arguments. C cannot overl
 ### Position
 
 ```rust
-pub fn Position (&self) -> Option<(f64, f64, f64)>
+pub fn Position_Get (&self) -> Option<(f64, f64, f64)>
 ```
 
 - **Parameters:** none.
@@ -206,7 +206,7 @@ pub fn Position (&self) -> Option<(f64, f64, f64)>
 - **Example:**
 
 ```rust
-if let Some ((dX, dY, dZ)) = pNode.Position ()
+if let Some ((dX, dY, dZ)) = pNode.Position_Get ()
 {
    pHost.Console ().Log (&format!("{dX} {dY} {dZ}"));
 }
@@ -215,7 +215,7 @@ if let Some ((dX, dY, dZ)) = pNode.Position ()
 ### Rotation
 
 ```rust
-pub fn Rotation (&self) -> Option<(f64, f64, f64, f64)>
+pub fn Rotation_Get (&self) -> Option<(f64, f64, f64, f64)>
 ```
 
 - **Parameters:** none.
@@ -225,7 +225,7 @@ pub fn Rotation (&self) -> Option<(f64, f64, f64, f64)>
 ### Scale
 
 ```rust
-pub fn Scale (&self) -> Option<f64>
+pub fn Scale_Get (&self) -> Option<f64>
 ```
 
 - **Parameters:** none.
@@ -235,7 +235,7 @@ pub fn Scale (&self) -> Option<f64>
 ### Scale_Axes
 
 ```rust
-pub fn Scale_Axes (&self) -> Option<(f64, f64, f64)>
+pub fn Scale_Axes_Get (&self) -> Option<(f64, f64, f64)>
 ```
 
 - **Parameters:** none.
@@ -244,7 +244,7 @@ pub fn Scale_Axes (&self) -> Option<(f64, f64, f64)>
 ### Bound
 
 ```rust
-pub fn Bound (&self) -> Option<(f64, f64, f64)>
+pub fn Bound_Get (&self) -> Option<(f64, f64, f64)>
 ```
 
 - **Parameters:** none.
@@ -253,7 +253,7 @@ pub fn Bound (&self) -> Option<(f64, f64, f64)>
 ### Name
 
 ```rust
-pub fn Name (&self) -> String
+pub fn Name_Get (&self) -> String
 ```
 
 - **Parameters:** none.
@@ -263,7 +263,7 @@ pub fn Name (&self) -> String
 ### Resource
 
 ```rust
-pub fn Resource (&self) -> String
+pub fn Resource_Get (&self) -> String
 ```
 
 - **Parameters:** none.
@@ -272,7 +272,7 @@ pub fn Resource (&self) -> String
 ### Panel
 
 ```rust
-pub fn Panel (&self) -> String
+pub fn Panel_Get (&self) -> String
 ```
 
 - **Parameters:** none.
