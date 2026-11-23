@@ -21,7 +21,8 @@ method on. The canonical names are fixed by `sneeze_abi.h` itself.
 - Singleton subsystems take an `HFABRIC` (the fabric handle):
   `pFabric.Console ().Log (s)` becomes `Console_Log (twFabricIx, s)`.
 - A node takes its own `HNODE` (a composed object index):
-  `pNode.Position (x, y, z)` becomes `Node_Position (qwComposed, x, y, z)`.
+  `pNode.Position_Set (x, y, z)` becomes `Node_Position_Set (qwComposed, x, y, z)`.
+  `Node_Position` remains and is scheduled for removal.
 - The map-object builder is an `HMAPOBJECT` (an opaque handle to a guest-local
   builder): `SNEEZE_ABI_MAPOBJECT::Physical ()` becomes `MapObject_Physical ()`.
 
@@ -31,7 +32,7 @@ method on. The canonical names are fixed by `sneeze_abi.h` itself.
 | `pFabric.Storage ().Has (eScope, p)`   | `Storage_Has (twFabricIx, eScope, p)`         |
 | `pFabric.Data ().Get (p)`              | `Data_Get (twFabricIx, p)`                    |
 | `pFabric.Scene ().Node_Root (&obj)`    | `Scene_Node_Root (twFabricIx, pObject)`       |
-| `pNode.Scale (2.0)`                    | `Node_Scale (qwComposed, 2.0)`                |
+| `pNode.Scale_Set (2.0)`                | `Node_Scale_Set (qwComposed, 2.0)`            |
 | `pFabric.Container ().Name ()`         | `Container_Name (twFabricIx)`                 |
 | `SNEEZE_ABI_MAPOBJECT::Physical ()`    | `MapObject_Physical ()`                       |
 
@@ -72,7 +73,7 @@ void Instance_Open (HFABRIC twFabricIx)
    MapObject_Reference (pRoot, "assets/Stool.glb");
 
    HNODE qwNode = Scene_Node_Root (twFabricIx, pRoot);
-   Node_Scale (qwNode, 2.0);
+   Node_Scale_Set (qwNode, 2.0);
 
    MapObject_Free (pRoot);
 }
@@ -150,13 +151,13 @@ C forms of the `NODE` accessors (`IsValid` is `false` only when the creating cal
 failed).
 
 ```c
-void Node_Position   (HNODE qwComposed, double dX, double dY, double dZ);
-void Node_Scale      (HNODE qwComposed, double dScale);
-void Node_Scale_Axes (HNODE qwComposed, double dX, double dY, double dZ);
-void Node_Bound      (HNODE qwComposed, double dX, double dY, double dZ);
-void Node_Name       (HNODE qwComposed, const char* sName);
-void Node_Resource   (HNODE qwComposed, const char* sUrl);
-void Node_Panel      (HNODE qwComposed, const char* sRml);
+void Node_Position_Set   (HNODE qwComposed, double dX, double dY, double dZ);
+void Node_Scale_Set      (HNODE qwComposed, double dScale);
+void Node_Scale_Axes_Set (HNODE qwComposed, double dX, double dY, double dZ);
+void Node_Bound_Set      (HNODE qwComposed, double dX, double dY, double dZ);
+void Node_Name_Set       (HNODE qwComposed, const char* sName);
+void Node_Resource_Set   (HNODE qwComposed, const char* sUrl);
+void Node_Panel_Set      (HNODE qwComposed, const char* sRml);
 
 uint16_t Node_Class    (HNODE qwComposed);
 uint64_t Node_ObjectIx (HNODE qwComposed);

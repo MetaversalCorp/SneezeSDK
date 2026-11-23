@@ -62,12 +62,14 @@ if !pNode.IsValid ()
 
 ## Property mutators (host calls)
 
-Each of these sends one update to the live node.
+Each of these sends one update to the live node. The current names end in `_Set`.
 
-### Position
+`Position`, `Rotation`, `Scale`, `Scale_Axes`, `Bound`, `Name`, `Resource`, and `Panel` are the same writes. They remain so a module written against those names still builds, and each is scheduled for removal. Both names send the original ABI method number, so a module that was already compiled keeps working without a rebuild. C spells the current names `Node_Position_Set` and so on. C++ uses the same `_Set` names. Reads are `Position_Get` in C++ and Rust, and `Node_Position_Get` in C.
+
+### Position_Set
 
 ```rust
-pub fn Position (&self, dX: f64, dY: f64, dZ: f64)
+pub fn Position_Set (&self, dX: f64, dY: f64, dZ: f64)
 ```
 
 - **Parameters:** `dX`, `dY`, `dZ` - the position, in the fabric's right-handed Z-up world frame (X east, Y north, Z up).
@@ -76,32 +78,47 @@ pub fn Position (&self, dX: f64, dY: f64, dZ: f64)
 - **Example:**
 
 ```rust
-pNode.Position (0.0, 0.0, 0.428);
+pNode.Position_Set (0.0, 0.0, 0.428);
 ```
 
-- **See also:** [`Scale`](#scale), [`Bound`](#bound).
+- **See also:** [`Scale_Set`](#scale_set), [`Bound_Set`](#bound_set).
 
-### Scale
+### Rotation_Set
 
 ```rust
-pub fn Scale (&self, dScale: f64)
+pub fn Rotation_Set (&self, dX: f64, dY: f64, dZ: f64, dW: f64)
+```
+
+- **Parameters:** `dX`, `dY`, `dZ`, `dW` - the local rotation quaternion.
+- **Returns:** nothing.
+- **Description:** Sets the node's local rotation. Identity is `(0, 0, 0, 1)`.
+- **Example:**
+
+```rust
+pNode.Rotation_Set (0.0, 0.0, 0.0, 1.0);
+```
+
+### Scale_Set
+
+```rust
+pub fn Scale_Set (&self, dScale: f64)
 ```
 
 - **Parameters:** `dScale` - a single uniform scale factor applied to all axes.
 - **Returns:** nothing.
-- **Description:** Scales the node uniformly. Use [`Scale_Axes`](#scale_axes) for non-uniform scaling.
+- **Description:** Scales the node uniformly. Use [`Scale_Axes_Set`](#scale_axes_set) for non-uniform scaling.
 - **Example:**
 
 ```rust
-pNode.Scale (2.0);
+pNode.Scale_Set (2.0);
 ```
 
-- **See also:** [`Scale_Axes`](#scale_axes).
+- **See also:** [`Scale_Axes_Set`](#scale_axes_set).
 
-### Scale_Axes
+### Scale_Axes_Set
 
 ```rust
-pub fn Scale_Axes (&self, dX: f64, dY: f64, dZ: f64)
+pub fn Scale_Axes_Set (&self, dX: f64, dY: f64, dZ: f64)
 ```
 
 - **Parameters:** `dX`, `dY`, `dZ` - per-axis scale factors.
@@ -110,15 +127,15 @@ pub fn Scale_Axes (&self, dX: f64, dY: f64, dZ: f64)
 - **Example:**
 
 ```rust
-pNode.Scale_Axes (1.0, 1.0, 2.0);
+pNode.Scale_Axes_Set (1.0, 1.0, 2.0);
 ```
 
-- **See also:** [`Scale`](#scale).
+- **See also:** [`Scale_Set`](#scale_set).
 
-### Bound
+### Bound_Set
 
 ```rust
-pub fn Bound (&self, dX: f64, dY: f64, dZ: f64)
+pub fn Bound_Set (&self, dX: f64, dY: f64, dZ: f64)
 ```
 
 - **Parameters:** `dX`, `dY`, `dZ` - the three bounding extents.
@@ -127,15 +144,15 @@ pub fn Bound (&self, dX: f64, dY: f64, dZ: f64)
 - **Example:**
 
 ```rust
-pNode.Bound (0.4, 0.4, 0.43);
+pNode.Bound_Set (0.4, 0.4, 0.43);
 ```
 
-- **See also:** [`Position`](#position).
+- **See also:** [`Position_Set`](#position_set).
 
-### Name
+### Name_Set
 
 ```rust
-pub fn Name (&self, sName: &str)
+pub fn Name_Set (&self, sName: &str)
 ```
 
 - **Parameters:** `sName` - the node's internal name.
@@ -144,15 +161,15 @@ pub fn Name (&self, sName: &str)
 - **Example:**
 
 ```rust
-pNode.Name ("Stool");
+pNode.Name_Set ("Stool");
 ```
 
 - **See also:** [`SNEEZE_ABI_MAPOBJECT::Name`](MAPOBJECT.md#name).
 
-### Resource
+### Resource_Set
 
 ```rust
-pub fn Resource (&self, sUrl: &str)
+pub fn Resource_Set (&self, sUrl: &str)
 ```
 
 - **Parameters:** `sUrl` - the resource URL (e.g. a GLB model), absolute or relative to the fabric.
@@ -161,15 +178,15 @@ pub fn Resource (&self, sUrl: &str)
 - **Example:**
 
 ```rust
-pNode.Resource ("assets/Stool.glb");
+pNode.Resource_Set ("assets/Stool.glb");
 ```
 
 - **See also:** [`SNEEZE_ABI_MAPOBJECT::Reference`](MAPOBJECT.md#reference).
 
-### Panel
+### Panel_Set
 
 ```rust
-pub fn Panel (&self, sRml: &str)
+pub fn Panel_Set (&self, sRml: &str)
 ```
 
 - **Parameters:** `sRml` - the RML+CSS source for the panel.
@@ -181,16 +198,16 @@ pub fn Panel (&self, sRml: &str)
 let mut pObj = SNEEZE_ABI_MAPOBJECT::Panel ();
 pObj.Parent (pRoot.Class (), pRoot.ObjectIx ());
 let pPanel = pHost.Fabric ().Node_Open (&pObj);
-pPanel.Panel ("<rml><body>Hello</body></rml>");
+pPanel.Panel_Set ("<rml><body>Hello</body></rml>");
 ```
 
 - **See also:** [`SNEEZE_ABI_MAPOBJECT`](MAPOBJECT.md).
 
 ## Property reads (host calls)
 
-C and Rust cannot overload, so their reads are `Position_Get` / `Node_Position_Get`. C++ overloads the write name and returns `bool` through out-pointers. A numeric read is `None` when the node is gone. A zero position is `Some`, because the host returns the three stored doubles. A string read is empty when that field was never set, or when the node is gone. C string reads are malloc'd (`NULL` in that same empty case); the caller frees them.
+Reads are `Position_Get` in C++ and Rust, and `Node_Position_Get` in C. The bare names are setters only. C++ and C return `bool` through out-pointers. A numeric read is `None` in Rust when the node is gone. A zero position is `Some`, because the host returns the three stored doubles. A string read is empty when that field was never set, or when the node is gone. C string reads are malloc'd (`NULL` in that same empty case); the caller frees them. C++ string reads are `std::string` and empty in that same case.
 
-`Scale ()` returns the X component of the stored scale. `Scale (dScale)` writes that one factor onto all three axes, so a uniform scale round-trips. `Scale_Axes ()` returns the stored vector.
+`Scale_Get` returns the X component of the stored scale. `Scale_Set (dScale)` writes that one factor onto all three axes, so a uniform scale round-trips. `Scale_Axes_Get` returns the stored vector.
 
 `Model` has no read. The write consumes the glTF or GLB bytes into the render model and does not keep them.
 
@@ -202,7 +219,7 @@ pub fn Position_Get (&self) -> Option<(f64, f64, f64)>
 
 - **Parameters:** none.
 - **Returns:** the local position `(dX, dY, dZ)`, or `None` when the node is gone.
-- **Description:** Reads the position stored on the node, in the same Z-up frame [`Position`](#position) writes.
+- **Description:** Reads the position stored on the node, in the same Z-up frame [`Position_Set`](#position_set) writes.
 - **Example:**
 
 ```rust
@@ -230,7 +247,7 @@ pub fn Scale_Get (&self) -> Option<f64>
 
 - **Parameters:** none.
 - **Returns:** `d3Scale[0]`, or `None` when the node is gone.
-- **Description:** The uniform factor. Use Scale_Axes when the axes differ.
+- **Description:** The uniform factor. Use Scale_Axes_Set when the axes differ.
 
 ### Scale_Axes
 

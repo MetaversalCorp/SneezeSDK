@@ -293,9 +293,13 @@ enum eSNEEZE_ABI_METHOD_FABRIC
    kSNEEZE_ABI_METHOD_FABRIC_NODE_CLOSE                  =  6,
 };
 
+// Methods 1-8 are the original setters. Their numbers stay so a module built
+// against them keeps working. The guest SDKs still expose the original names
+// (Position, Scale, and the rest) and mark those names scheduled for removal.
+// Position_Set, Scale_Set, and the other _Set names call these same numbers.
 enum eSNEEZE_ABI_METHOD_NODE
 {
-   kSNEEZE_ABI_METHOD_NODE_POSITION                      =  1,
+   kSNEEZE_ABI_METHOD_NODE_POSITION                      =  1,   // original setter; SDK name Position is scheduled for removal
    kSNEEZE_ABI_METHOD_NODE_ROTATION                      =  2,
    kSNEEZE_ABI_METHOD_NODE_SCALE                         =  3,
    kSNEEZE_ABI_METHOD_NODE_SCALE_AXES                    =  4,
@@ -654,6 +658,9 @@ SNEEZE_ABI_MOMENT, *PSNEEZE_ABI_MOMENT;
 //     NODE_CLOSE         : (u64 qwComposed)                               -> 0/1
 //
 //   NODE (u64 qwComposed, then...)
+//   POSITION through PANEL are the original setter numbers. Already-built
+//   modules keep calling them. The SDK names without _Set are scheduled for
+//   removal; the _Set names call these same numbers.
 //     POSITION   : (f64 dX, f64 dY, f64 dZ)
 //     ROTATION   : (f64 dX, f64 dY, f64 dZ, f64 dW)   (quaternion)
 //     SCALE      : (f64 dScale)
@@ -794,8 +801,10 @@ SNEEZE_ABI_MOMENT, *PSNEEZE_ABI_MOMENT;
 // Error/Free; Viewport_Position_Get/Set, Viewport_Rotation_Get/Set;
 // Fabric_Node_Map_Service/Map_Service_Ex/Map_Data/Root/Open/Close (the node-tree
 // API); Scene_Node_Root/Map_Data/Open/Close (DEPRECATED), Scene_Ambient_Get/Set,
-// Scene_Directional_Get/Set, Scene_Background_Get/Set; Services_Has/Get; Node_Position/
-// Rotation/Scale/Scale_Axes/Bound/Name/Resource/Panel. Every call takes the
+// Scene_Directional_Get/Set, Scene_Background_Get/Set; Services_Has/Get; Node_Position_Set/
+// Rotation_Set/Scale_Set/Scale_Axes_Set/Bound_Set/Name_Set/Resource_Set/Panel_Set.
+// Node_Position/Rotation/Scale/Scale_Axes/Bound/Name/Resource/Panel remain and are
+// scheduled for removal. Every call takes the
 // HOST* handle first; node methods also take HNODE; builders take HMAPOBJECT.
 // ---------------------------------------------------------------------------
 

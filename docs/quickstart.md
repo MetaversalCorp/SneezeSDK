@@ -195,7 +195,7 @@ void Instance_Open (HFABRIC twFabricIx)
     MapObject_Reference (pRoot, "assets/Stool.glb");
 
     HNODE qwNode = Scene_Node_Root (twFabricIx, pRoot);
-    Node_Scale (qwNode, 2.0);
+    Node_Scale_Set (qwNode, 2.0);
 
     MapObject_Free (pRoot);
 }
