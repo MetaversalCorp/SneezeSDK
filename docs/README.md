@@ -6,9 +6,10 @@ A module talks to the engine across one narrow, frozen interface (the ABI). You 
 
 ## Where to start
 
-1. [Incorporating the ABI](incorporating-the-abi.md) - how to set up a project in each language, what the engine imports and exports, and the wire format underneath the SDK.
-2. [API overview](api/overview.md) - the object model: the `HOST` root, the `Open` lifecycle, how the pieces fit together.
-3. The per-class pages below - one page per class, each documenting every method with its declaration, parameters, return value, a description, an example, and related methods.
+1. Quickstart your first Sneeze WASM on [Windows](quickstart-windows.md) or [Linux/MacOS](quickstart.md) 
+2. [Incorporating the ABI](incorporating-the-abi.md) - how to set up a project in each language, what the engine imports and exports, and the wire format underneath the SDK.
+3. [API overview](api/overview.md) - the object model: the `HOST` root, the `Open` lifecycle, how the pieces fit together.
+4. The per-class pages below - one page per class, each documenting every method with its declaration, parameters, return value, a description, an example, and related methods.
 
 Writing in C? See [The C SDK](c-sdk.md) for the Emscripten setup and the full flat C function reference; the per-class pages below still describe the semantics.
 
