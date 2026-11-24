@@ -157,7 +157,11 @@ void Node_Bound      (HNODE qwComposed, double dX, double dY, double dZ);
 void Node_Name       (HNODE qwComposed, const char* sName);
 void Node_Resource   (HNODE qwComposed, const char* sUrl);
 void Node_Panel      (HNODE qwComposed, const char* sRml);
+```
 
+`Model` is ABI method `kSNEEZE_ABI_METHOD_NODE_MODEL` (9). After the composed identity, `(i32 nBytesOffset, i32 nBytesLen)` points at glTF or GLB bytes. See [NODE](api/NODE.md#model-abi-only). This binding does not wrap that call. A panel click arrives as [VIEWPORT](api/VIEWPORT.md) method 5 on `Notify`; this binding's dispatcher has no hook for it.
+
+```c
 uint16_t Node_Class    (HNODE qwComposed);
 uint64_t Node_ObjectIx (HNODE qwComposed);
 bool     Node_IsValid  (HNODE qwComposed);

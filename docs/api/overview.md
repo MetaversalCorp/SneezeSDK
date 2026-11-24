@@ -74,7 +74,7 @@ Scene construction is a two-step pattern:
 1. Build a [`SNEEZE_ABI_MAPOBJECT`](MAPOBJECT.md) in guest memory with a fluent builder - pick a class factory (`Physical ()`, `Celestial ()`, `Light ()`, ...), then chain setters (`Name`, `Reference`, `Position`, ...).
 2. Hand it to [`FABRIC`](FABRIC.md): `Node_Root (&obj)` for the fabric root, or `Node_Open (&obj)` for a child (set the child's parent index on the object first). Each returns a [`NODE`](NODE.md).
 
-After creation you mutate a live node through its `NODE` handle (`Position`, `Scale`, `Name`, `Resource`, `Panel`, ...). The map object is the *creation* template; the node is the *live* object.
+After creation you mutate a live node through its `NODE` handle (`Position`, `Scale`, `Name`, `Resource`, `Panel`, ...). The ABI's `NODE_MODEL` method also loads a glTF or GLB from guest memory as that node's mesh; no binding wraps it yet (see [`NODE`](NODE.md#model-abi-only)). The map object is the *creation* template; the node is the *live* object. A click on a panel element that has an `id` comes back later as a [`VIEWPORT`](VIEWPORT.md) notify.
 
 `FABRIC::Node_Map_Data (sPath)` is a shortcut: it asks the engine to build an entire node subtree directly from a path in the fabric's `Data` block, without you constructing each map object. Alternatively, [`FABRIC::Node_Map_Service`](FABRIC.md#node_map_service) hands the whole fabric to a browser-managed map service instead of building nodes by hand.
 
@@ -94,13 +94,13 @@ Unlike the singleton subsystem views, these are handles you own. [`REQUEST::Clos
 
 The ABI reserves numbers for subsystems and methods that are declared but not yet implemented in the engine: 
 1. `NETWORK`'s `REQUEST_PROGRESS` event
-2. `VIEWPORT` (camera get/set)
+2. `VIEWPORT` camera get/set (methods 1-4). The pointer click notify is live; see [`VIEWPORT`](VIEWPORT.md).
 3. `SCENE` global-lighting and background methods
 4. `NETWORK`'s `IO` methods — SDK wrappers exist; the host `socket.io-client` lives in the engine, not this repository
    
 These appear in `sneeze_abi.h` marked "not implemented yet" and have no SDK wrapper - do not rely on them until they land.
 
-Event delivery through `Notify` is live: it carries [`TIMER`](TIMER.md) fires, dispatched to [`INSTANCE::Timer`](INSTANCE.md#timer), and finished requests, dispatched to [`INSTANCE::Request`](INSTANCE.md#request). Other event kinds (node events, for example) are still reserved; a `Notify` packet a module has no hook for is simply ignored, so old modules stay forward-compatible as new event kinds land.
+Event delivery through `Notify` is live: it carries [`TIMER`](TIMER.md) fires, dispatched to [`INSTANCE::Timer`](INSTANCE.md#timer), finished requests, dispatched to [`INSTANCE::Request`](INSTANCE.md#request), and a panel click, delivered as [`VIEWPORT`](VIEWPORT.md) method `POINTER`. The shipped bindings dispatch the timer, request, socket, and Socket.IO hooks; a pointer packet has no hook yet, so those bindings ignore it and a module reads it from `Notify` directly. Other event kinds (node events, for example) are still reserved. A `Notify` packet a module has no hook for is ignored, so old modules stay forward-compatible as new event kinds land.
 
 ## See also
 

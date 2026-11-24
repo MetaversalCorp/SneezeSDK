@@ -33,6 +33,7 @@ Subsystems (reached through `HOST`):
 - [IO](api/IO.md) - one Socket.IO connection (host runs `socket.io-client`).
 - [FABRIC](api/FABRIC.md) - node-tree construction (and map-service attach).
 - [NODE](api/NODE.md) - per-node property mutation.
+- [VIEWPORT](api/VIEWPORT.md) - a panel click, delivered through `Notify`. Camera get/set are reserved.
 
 Time and scheduling (reached through `HOST`):
 
