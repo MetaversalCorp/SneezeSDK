@@ -184,4 +184,15 @@ let pPanel = pHost.Fabric ().Node_Open (&pObj);
 pPanel.Panel ("<rml><body>Hello</body></rml>");
 ```
 
-- **See also:** [`SNEEZE_ABI_MAPOBJECT`](MAPOBJECT.md).
+- **See also:** [`SNEEZE_ABI_MAPOBJECT`](MAPOBJECT.md), [`VIEWPORT`](VIEWPORT.md) (a click on an element that has an `id` is reported back to the module).
+
+### Model (ABI only)
+
+```
+NODE_MODEL (9) : (u64 qwComposed, i32 nBytesOffset, i32 nBytesLen) -> 0/1
+```
+
+- **Parameters:** `qwComposed` - the node's composed identity. `nBytesOffset`, `nBytesLen` - a complete glTF JSON document or a binary GLB in guest memory.
+- **Returns:** `1` when the engine attached those bytes as this node's mesh. `0` when the node does not exist, the buffer is empty, or the bytes do not produce a drawable model.
+- **Description:** Loads a mesh from guest memory and makes it the model the compositor draws for this node. The engine parses the bytes with the same glTF loader it uses for a model fetched by URL. A rejected load leaves the node's current mesh in place. [`Resource`](#resource) stores a URL and the engine fetches it; this method hands over the file itself, so the bytes never need to be a fabric asset. The buffer must remain valid for the synchronous `Call`. No language binding wraps this method yet, so send the packet yourself: header `wType` 8 (`NODE`), `wMethod` 9, then the payload above. See [Incorporating the ABI](../incorporating-the-abi.md) for the packet format.
+- **See also:** [`Resource`](#resource).

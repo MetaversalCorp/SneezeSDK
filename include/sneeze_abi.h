@@ -255,7 +255,7 @@ enum eSNEEZE_ABI_METHOD_VIEWPORT
    kSNEEZE_ABI_METHOD_VIEWPORT_POSITION_SET              =  2,        // not implemented yet (host new)
    kSNEEZE_ABI_METHOD_VIEWPORT_ROTATION_GET              =  3,        // not implemented yet (host new)
    kSNEEZE_ABI_METHOD_VIEWPORT_ROTATION_SET              =  4,        // not implemented yet (host new)
-   kSNEEZE_ABI_METHOD_VIEWPORT_POINTER                   =  5,        // Notify: click. (twFabricIx, nIdBytes, UTF-8 id)
+   kSNEEZE_ABI_METHOD_VIEWPORT_POINTER                   =  5,        // Notify: panel click. (u64 twFabricIx, u64 nIdBytes, UTF-8 id bytes)
 #ifdef TEMPORARY_DIGIT_KEYS
    kSNEEZE_ABI_METHOD_VIEWPORT_KEY                       = 60,       // TEMPORARY Notify: (twFabricIx, nDigit, 0, 0)
 #endif
@@ -615,6 +615,10 @@ SNEEZE_ABI_MOMENT, *PSNEEZE_ABI_MOMENT;
 //     ASSERT                 : (i32 bCondition, i32 nMsgOffset, i32 nMsgLen)
 //     GROUP_END              : (no further fields)
 //
+//   VIEWPORT Notify (host -> guest):
+//     POINTER : (u64 twFabricIx, u64 nIdBytes, UTF-8 id bytes[nIdBytes])
+//               panel click. nIdBytes is the id length and is capped at 128.
+//               The id has no trailing NUL. See docs/api/VIEWPORT.md.
 //   VIEWPORT Notify (TEMPORARY_DIGIT_KEYS, host -> guest):
 //     KEY : (u64 twFabricIx, u64 nDigit, u64 0, u64 0)   // nDigit 0..9
 //

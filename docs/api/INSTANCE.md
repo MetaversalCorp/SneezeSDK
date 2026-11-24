@@ -288,7 +288,7 @@ fn Io_Acked (pHost: &HOST, pIo: IO, qwParam: u64, nSize: i64) {}
 sneeze::instance! (MY_MODULE);
 ```
 
-Place this once, at module scope, passing the type that implements `INSTANCE`. It generates the seven raw ABI exports the engine looks up by name - `Init`, `Open`, `Close`, `Shutdown`, `Alloc`, `Free`, `Notify` - and routes each to your implementation (or to the SDK's own memory management, for `Alloc`/`Free`). The generated `Notify` decodes each host event and dispatches it to the matching hook - a timer fire to [`Timer`](#timer), a finished request to [`Request`](#request), a socket event to one of the four `Socket_*` hooks, an IO event to one of the five `Io_*` hooks; an event with no hook is ignored. You never write those exports yourself.
+Place this once, at module scope, passing the type that implements `INSTANCE`. It generates the seven raw ABI exports the engine looks up by name - `Init`, `Open`, `Close`, `Shutdown`, `Alloc`, `Free`, `Notify` - and routes each to your implementation (or to the SDK's own memory management, for `Alloc`/`Free`). The generated `Notify` decodes each host event and dispatches it to the matching hook - a timer fire to [`Timer`](#timer), a finished request to [`Request`](#request), a socket event to one of the four `Socket_*` hooks, an IO event to one of the five `Io_*` hooks. A [`VIEWPORT`](VIEWPORT.md) pointer click has no hook here, so the generated dispatcher ignores it; read that packet from `Notify` yourself. Any other event with no hook is ignored. You never write those exports yourself.
 
 - **Description:** Without this macro the engine cannot find your module's entry points, because it resolves them as named WASM exports. The macro is the one required piece of boilerplate.
 - **Example:**
